@@ -32,6 +32,7 @@ export interface SoumissionDetail {
   organisme?: string;
   organisme_nom?: string;
   justification?: string;
+  estimation_budget?: string;
 }
 
 export interface Soumission {

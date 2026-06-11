@@ -15,7 +15,8 @@ const BASE = `
     'date_souhaitee', sd.date_souhaitee,
     'organisme', sd.organisme,
     'organisme_nom', sd.organisme_nom,
-    'justification', sd.justification
+    'justification', sd.justification,
+    'estimation_budget', sd.estimation_budget
   )) as details
   FROM formation.soumissions s
   LEFT JOIN formation.soumission_details sd ON sd.soumission_id = s.id

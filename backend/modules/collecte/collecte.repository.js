@@ -18,9 +18,9 @@ async function createSoumission({ agent_name, agent_email, service, direction, d
     } else {
       const dateSouhaitee = Array.isArray(d.date_souhaitee) ? JSON.stringify(d.date_souhaitee) : (d.date_souhaitee || null);
       await db.run(
-        `INSERT INTO formation.soumission_details (soumission_id, formation_id, axe_id, nb_agents, type, intitule, objectif, date_souhaitee, organisme, organisme_nom, justification)
-         VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-        [soumission.id, d.axe_id || null, d.nb_agents || 1, type, d.intitule || null, d.objectif || null, dateSouhaitee, d.organisme || null, d.organisme_nom || null, d.justification || null]
+        `INSERT INTO formation.soumission_details (soumission_id, formation_id, axe_id, nb_agents, type, intitule, objectif, date_souhaitee, organisme, organisme_nom, justification, estimation_budget)
+         VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [soumission.id, d.axe_id || null, d.nb_agents || 1, type, d.intitule || null, d.objectif || null, dateSouhaitee, d.organisme || null, d.organisme_nom || null, d.justification || null, d.estimation_budget || null]
       );
     }
   }
@@ -44,7 +44,8 @@ function findByAgent(agentName) {
        'date_souhaitee', sd.date_souhaitee,
        'organisme', sd.organisme,
        'organisme_nom', sd.organisme_nom,
-       'justification', sd.justification
+       'justification', sd.justification,
+       'estimation_budget', sd.estimation_budget
      )) as details
      FROM formation.soumissions s
      LEFT JOIN formation.soumission_details sd ON sd.soumission_id = s.id

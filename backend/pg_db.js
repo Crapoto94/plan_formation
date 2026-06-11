@@ -79,6 +79,7 @@ async function setupDb() {
     await client.query(`ALTER TABLE formation.soumission_details ADD COLUMN IF NOT EXISTS organisme VARCHAR(50);`);
     await client.query(`ALTER TABLE formation.soumission_details ADD COLUMN IF NOT EXISTS organisme_nom TEXT;`);
     await client.query(`ALTER TABLE formation.soumission_details ADD COLUMN IF NOT EXISTS justification TEXT;`);
+    await client.query(`ALTER TABLE formation.soumission_details ADD COLUMN IF NOT EXISTS estimation_budget TEXT;`);
 
     console.log('[DB] Schéma formation initialisé');
   } finally {

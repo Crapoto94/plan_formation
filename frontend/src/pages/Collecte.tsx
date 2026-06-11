@@ -37,18 +37,19 @@ interface DetailRowAutre {
   organisme: string;
   organisme_nom: string;
   justification: string;
+  estimation_budget: string;
 }
 
 type DetailRow = DetailRowReg | DetailRowAutre;
 
-const YEARS = [2027, 2028, 2029, 2030];
+const YEARS = [2027, 2028, 2029];
 
 function emptyReg(): DetailRowReg {
   return { type: 'reglementaire', formation_id: 0, axe_id: 0, motivation: '', nb_agents: 1 };
 }
 
 function emptyAutre(): DetailRowAutre {
-  return { type: 'autre', axe_id: 0, nb_agents: 1, intitule: '', objectif: '', date_souhaitee: [], organisme: 'CNFPT', organisme_nom: '', justification: '' };
+  return { type: 'autre', axe_id: 0, nb_agents: 1, intitule: '', objectif: '', date_souhaitee: [], organisme: 'CNFPT', organisme_nom: '', justification: '', estimation_budget: '' };
 }
 
 export default function Collecte() {
@@ -153,11 +154,11 @@ export default function Collecte() {
         {details.map((row, i) => (
           <div key={i} className="border rounded-lg p-4 space-y-3 relative">
             <div className="flex items-center gap-1 mb-2">
-              <button type="button" onClick={() => updateRow(i, 'type', 'reglementaire')}
+              <button type="button" onClick={() => { const copy = [...details]; copy[i] = emptyReg() as any; setDetails(copy); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${row.type === 'reglementaire' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`}>
                 <BookOpen className="w-4 h-4" /> Réglementaire
               </button>
-              <button type="button" onClick={() => updateRow(i, 'type', 'autre')}
+              <button type="button" onClick={() => { const copy = [...details]; copy[i] = emptyAutre() as any; setDetails(copy); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${row.type === 'autre' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:bg-gray-100'}`}>
                 <GraduationCap className="w-4 h-4" /> Autre formation
               </button>
@@ -249,6 +250,10 @@ export default function Collecte() {
                     <div>
                       <label className="block text-xs font-medium mb-1">Justification du recours à un organisme externe</label>
                       <textarea value={row.justification} onChange={(e) => updateRow(i, 'justification', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} required placeholder="Pourquoi le CNFPT n'a pas été retenu pour ce besoin spécifique ?" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Estimation budgétaire</label>
+                      <input type="text" value={row.estimation_budget} onChange={(e) => updateRow(i, 'estimation_budget', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Ex: 5 000 €" />
                     </div>
                   </>
                 )}
