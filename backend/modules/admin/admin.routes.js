@@ -1,0 +1,30 @@
+const { Router } = require('express');
+const { authenticate } = require('../../middleware/auth');
+const { requireAdmin } = require('../../middleware/admin');
+const controller = require('./admin.controller');
+
+const router = Router();
+router.use(authenticate);
+
+// GET en lecture seule — accessible à tout utilisateur authentifié
+router.get('/formations', controller.listFormations);
+router.get('/axes', controller.listAxes);
+
+// Routes d'écriture — admin uniquement
+router.post('/formations', requireAdmin, controller.createFormation);
+router.put('/formations/:id', requireAdmin, controller.updateFormation);
+router.delete('/formations/:id', requireAdmin, controller.deleteFormation);
+router.post('/axes', requireAdmin, controller.createAxe);
+router.put('/axes/:id', requireAdmin, controller.updateAxe);
+router.delete('/axes/:id', requireAdmin, controller.deleteAxe);
+
+router.get('/config', requireAdmin, controller.getConfig);
+router.put('/config', requireAdmin, controller.updateConfig);
+router.post('/test-apm', requireAdmin, controller.testApm);
+router.post('/test-hubdsi', requireAdmin, controller.testHubdsi);
+
+router.get('/ad/search', requireAdmin, controller.adSearch);
+router.get('/service-formation', requireAdmin, controller.getServiceFormation);
+router.put('/service-formation', requireAdmin, controller.updateServiceFormation);
+
+module.exports = router;

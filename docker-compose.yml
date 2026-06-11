@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: always
+    ports: ["3004:3004"]
+    environment:
+      - NODE_ENV=production
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-ivry_admin}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - APM_API_URL=${APM_API_URL:-https://api.ivry.local}
+      - APM_API_KEY=${APM_API_KEY}
+      - HUBDSI_API_URL=${HUBDSI_API_URL:-http://10.103.130.106:3001}
+      - HUBDSI_API_KEY=${HUBDSI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_USERS=${ADMIN_USERS}
+    env_file:
+      - .env
+    networks:
+      - formation-net
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=${APP_API_URL:-http://localhost:3004}
+    restart: always
+    ports: ["3005:80"]
+    depends_on: [backend]
+    networks:
+      - formation-net
+
+networks:
+  formation-net:
+    driver: bridge
