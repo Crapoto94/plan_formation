@@ -1,3 +1,42 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Roboto', Arial, Helvetica, sans-serif;
+  }
+}
+
+@layer utilities {
+  .bg-ivry-navy       { background-color: #29345C; }
+  .bg-ivry-navy-dark  { background-color: #1E2845; }
+  .bg-ivry-navy-light { background-color: #3A4A7A; }
+  .bg-ivry-red        { background-color: #EC4B52; }
+  .bg-ivry-red-dark   { background-color: #D43840; }
+
+  .text-ivry-navy      { color: #29345C; }
+  .text-ivry-navy-dark { color: #1E2845; }
+  .text-ivry-red       { color: #EC4B52; }
+  .text-ivry-red-dark  { color: #D43840; }
+
+  .border-ivry-navy { border-color: #29345C; }
+  .border-ivry-red  { border-color: #EC4B52; }
+
+  .hover\:bg-ivry-navy-dark:hover  { background-color: #1E2845; }
+  .hover\:bg-ivry-navy-light:hover { background-color: #3A4A7A; }
+  .hover\:text-ivry-red:hover      { color: #EC4B52; }
+  .hover\:text-ivry-navy-dark:hover{ color: #1E2845; }
+  .hover\:text-ivry-red-dark:hover { color: #D43840; }
+
+  .focus\:border-ivry-navy:focus { border-color: #29345C; }
+  .focus\:ring-ivry-navy:focus   { --tw-ring-color: rgba(41,52,92,1); }
+
+  .bg-ivry-navy\/5  { background-color: rgba(41,52,92,0.05); }
+  .bg-ivry-navy\/10 { background-color: rgba(41,52,92,0.10); }
+  .bg-ivry-red\/10  { background-color: rgba(236,75,82,0.10); }
+
+  .border-ivry-navy\/20 { border-color: rgba(41,52,92,0.20); }
+
+  .hover\:bg-ivry-navy\/5:hover { background-color: rgba(41,52,92,0.05); }
+}

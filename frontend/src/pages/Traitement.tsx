@@ -85,7 +85,7 @@ export default function Traitement() {
   const sortedGroups = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen"><Loader className="w-6 h-6 animate-spin text-blue-700" /></div>
+    <div className="flex items-center justify-center min-h-screen"><Loader className="w-6 h-6 animate-spin text-ivry-navy" /></div>
   );
 
   if (isRestricted) return (
@@ -107,7 +107,7 @@ export default function Traitement() {
       </div>
 
       {canValidate && selected.size > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center gap-3">
+        <div className="bg-ivry-navy/5 border border-ivry-navy/20 rounded p-3 mb-4 flex items-center gap-3">
           <span className="text-sm font-medium">{selected.size} sélectionnée(s)</span>
           <button onClick={handleValider} className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700">
             <CheckCircle className="w-4 h-4" /> Valider
@@ -121,16 +121,16 @@ export default function Traitement() {
       {sortedGroups.map(([serviceName, reqs]) => (
         <div key={serviceName} className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <h2 className="text-lg font-bold text-blue-800 border-l-4 border-blue-600 pl-3">{serviceName}</h2>
+            <h2 className="text-lg font-bold text-ivry-navy border-l-4 border-ivry-red pl-3">{serviceName}</h2>
             <span className="text-xs text-gray-400">({reqs.length})</span>
             {canValidate && (
-              <button onClick={() => toggleAll(reqs.map((r) => r.id))} className="text-xs text-blue-600 hover:underline ml-auto">
+              <button onClick={() => toggleAll(reqs.map((r) => r.id))} className="text-xs text-ivry-navy hover:underline ml-auto">
                 {reqs.every((r) => selected.has(r.id)) ? 'Tout désélectionner' : 'Tout sélectionner'}
               </button>
             )}
           </div>
 
-          <div className="overflow-x-auto rounded-xl border shadow-sm">
+          <div className="overflow-x-auto rounded border shadow-sm">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -150,7 +150,7 @@ export default function Traitement() {
                     {canValidate && (
                       <td className="px-3 py-2">
                         {s.statut === 'en_attente' && (
-                          <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} className="accent-blue-600" />
+                          <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} className="accent-[#29345C]" />
                         )}
                       </td>
                     )}
@@ -182,7 +182,7 @@ export default function Traitement() {
                             placeholder="..."
                             value={comments[s.id] ?? s.commentaire ?? ''}
                             onChange={(e) => setComments({ ...comments, [s.id]: e.target.value })}
-                            className="w-24 border-b border-gray-200 text-xs py-0.5 focus:outline-none focus:border-blue-500 bg-transparent"
+                            className="w-24 border-b border-gray-200 text-xs py-0.5 focus:outline-none focus:border-ivry-navy bg-transparent"
                           />
                         </div>
                       </td>
@@ -201,14 +201,14 @@ export default function Traitement() {
 
       {showRefuseDialog && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+          <div className="bg-white rounded shadow-xl p-6 w-full max-w-md">
             <h3 className="font-bold text-lg mb-2">Motif du refus</h3>
             <p className="text-sm text-gray-500 mb-4">{selected.size} demande(s) sélectionnée(s)</p>
             <textarea value={refuseMotif} onChange={(e) => setRefuseMotif(e.target.value)}
-              placeholder="Expliquez le motif du refus..." className="w-full border rounded-lg px-3 py-2 text-sm min-h-[100px]" required />
+              placeholder="Expliquez le motif du refus..." className="w-full border rounded px-3 py-2 text-sm min-h-[100px]" required />
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => { setShowRefuseDialog(false); setRefuseMotif(''); }} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Annuler</button>
-              <button onClick={confirmRefuser} disabled={!refuseMotif.trim()} className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">Confirmer le refus</button>
+              <button onClick={() => { setShowRefuseDialog(false); setRefuseMotif(''); }} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
+              <button onClick={confirmRefuser} disabled={!refuseMotif.trim()} className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50">Confirmer le refus</button>
             </div>
           </div>
         </div>

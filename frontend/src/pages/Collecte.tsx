@@ -122,28 +122,28 @@ export default function Collecte() {
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <ClipboardList className="w-6 h-6 text-blue-700" />
+          <ClipboardList className="w-6 h-6 text-ivry-navy" />
           <h1 className="text-2xl font-bold">Formulaire de demande de formation</h1>
         </div>
-        <button onClick={handleLogout} className="flex items-center gap-1 text-gray-500 hover:text-red-600">
+        <button onClick={handleLogout} className="flex items-center gap-1 text-gray-500 hover:text-ivry-red">
           <LogOut className="w-4 h-4" /> Déconnexion
         </button>
       </div>
 
       {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm p-6 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Direction</label>
-            <select value={direction} onChange={(e) => { setDirection(e.target.value); setService(''); }} className="w-full border rounded-lg px-3 py-2" required disabled={loadingOrg}>
+            <select value={direction} onChange={(e) => { setDirection(e.target.value); setService(''); }} className="w-full border rounded px-3 py-2 focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" required disabled={loadingOrg}>
               <option value="">Sélectionner...</option>
               {directionsServices.map((ds, i) => <option key={dsName(ds) || i} value={dsName(ds)}>{dsName(ds)}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Service</label>
-            <select value={service} onChange={(e) => setService(e.target.value)} className="w-full border rounded-lg px-3 py-2" required disabled={loadingOrg || !direction}>
+            <select value={service} onChange={(e) => setService(e.target.value)} className="w-full border rounded px-3 py-2 focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" required disabled={loadingOrg || !direction}>
               <option value="">Sélectionner...</option>
               {filteredServices.map((s, i) => <option key={i} value={svcValue(s)}>{svcLabel(s)}</option>)}
             </select>
@@ -152,14 +152,14 @@ export default function Collecte() {
 
         <h2 className="font-semibold text-lg mt-6">Besoins en formation</h2>
         {details.map((row, i) => (
-          <div key={i} className="border rounded-lg p-4 space-y-3 relative">
+          <div key={i} className="border rounded p-4 space-y-3 relative">
             <div className="flex items-center gap-1 mb-2">
               <button type="button" onClick={() => { const copy = [...details]; copy[i] = emptyReg() as any; setDetails(copy); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${row.type === 'reglementaire' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition ${row.type === 'reglementaire' ? 'bg-ivry-navy/10 text-ivry-navy' : 'text-gray-500 hover:bg-gray-100'}`}>
                 <BookOpen className="w-4 h-4" /> Réglementaire
               </button>
               <button type="button" onClick={() => { const copy = [...details]; copy[i] = emptyAutre() as any; setDetails(copy); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${row.type === 'autre' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:bg-gray-100'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition ${row.type === 'autre' ? 'bg-ivry-red/10 text-ivry-red' : 'text-gray-500 hover:bg-gray-100'}`}>
                 <GraduationCap className="w-4 h-4" /> Autre formation
               </button>
               {details.length > 1 && (
@@ -222,7 +222,7 @@ export default function Collecte() {
                   <div className="flex gap-3">
                     {YEARS.map((y) => (
                       <label key={y} className="flex items-center gap-1.5 text-sm cursor-pointer">
-                        <input type="checkbox" checked={row.date_souhaitee.includes(y)} onChange={() => toggleYear(i, y)} className="accent-indigo-600" />
+                        <input type="checkbox" checked={row.date_souhaitee.includes(y)} onChange={() => toggleYear(i, y)} className="accent-[#EC4B52]" />
                         {y}
                       </label>
                     ))}
@@ -232,11 +232,11 @@ export default function Collecte() {
                   <label className="block text-xs font-medium mb-1">Organisme pressenti</label>
                   <div className="flex gap-4">
                     <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                      <input type="radio" name={`orga-${i}`} checked={row.organisme === 'CNFPT'} onChange={() => updateRow(i, 'organisme', 'CNFPT')} className="accent-indigo-600" />
+                      <input type="radio" name={`orga-${i}`} checked={row.organisme === 'CNFPT'} onChange={() => updateRow(i, 'organisme', 'CNFPT')} className="accent-[#29345C]" />
                       CNFPT
                     </label>
                     <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                      <input type="radio" name={`orga-${i}`} checked={row.organisme === 'autre'} onChange={() => updateRow(i, 'organisme', 'autre')} className="accent-indigo-600" />
+                      <input type="radio" name={`orga-${i}`} checked={row.organisme === 'autre'} onChange={() => updateRow(i, 'organisme', 'autre')} className="accent-[#29345C]" />
                       Autre
                     </label>
                   </div>
@@ -267,16 +267,16 @@ export default function Collecte() {
         ))}
 
         <div className="flex gap-2">
-          <button type="button" onClick={() => addRow('reglementaire')} className="flex items-center gap-1 text-blue-700 hover:text-blue-900 text-sm">
+          <button type="button" onClick={() => addRow('reglementaire')} className="flex items-center gap-1 text-ivry-navy hover:text-ivry-navy-dark text-sm">
             <Plus className="w-4 h-4" /> Ajouter formation réglementaire
           </button>
-          <button type="button" onClick={() => addRow('autre')} className="flex items-center gap-1 text-indigo-700 hover:text-indigo-900 text-sm">
+          <button type="button" onClick={() => addRow('autre')} className="flex items-center gap-1 text-ivry-red hover:text-ivry-red-dark text-sm">
             <Plus className="w-4 h-4" /> Ajouter autre formation
           </button>
         </div>
 
         <div className="flex justify-end pt-4">
-          <button type="submit" className="flex items-center gap-2 bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800 transition">
+          <button type="submit" className="flex items-center gap-2 bg-ivry-navy text-white px-6 py-2 rounded hover:bg-ivry-navy-dark transition">
             <Send className="w-4 h-4" /> Soumettre la demande
           </button>
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Check, X, BookOpen, Target, Settings, Wifi, WifiOff, Loader, Save, Users, Search, Mail, UserPlus, UserMinus } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, BookOpen, Target, Settings, Wifi, Loader, Save, Users, Search, Mail, UserPlus, UserMinus } from 'lucide-react';
 import api from '../api/axios';
 import type { Formation, Axe } from '../types';
 
@@ -45,34 +45,34 @@ function FormationsSection() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="bg-white rounded shadow-sm p-6">
       <div className="flex items-center gap-2 mb-4">
-        <BookOpen className="w-5 h-5 text-blue-700" />
+        <BookOpen className="w-5 h-5 text-ivry-navy" />
         <h2 className="text-lg font-bold">Formations réglementaires</h2>
       </div>
 
       <div className="flex gap-2 mb-4">
-        <input type="text" placeholder="Libellé" value={form.libelle} onChange={(e) => setForm({ ...form, libelle: e.target.value })} className="flex-1 border rounded-lg px-3 py-2 text-sm" />
-        <input type="text" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="flex-1 border rounded-lg px-3 py-2 text-sm" />
+        <input type="text" placeholder="Libellé" value={form.libelle} onChange={(e) => setForm({ ...form, libelle: e.target.value })} className="flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
+        <input type="text" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
         {editingId ? (
           <>
-            <button onClick={() => update(editingId)} className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700"><Check className="w-4 h-4" /></button>
-            <button onClick={cancelEdit} className="bg-gray-400 text-white px-3 py-2 rounded-lg hover:bg-gray-500"><X className="w-4 h-4" /></button>
+            <button onClick={() => update(editingId)} className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"><Check className="w-4 h-4" /></button>
+            <button onClick={cancelEdit} className="bg-gray-400 text-white px-3 py-2 rounded hover:bg-gray-500"><X className="w-4 h-4" /></button>
           </>
         ) : (
-          <button onClick={create} className="bg-blue-700 text-white px-3 py-2 rounded-lg hover:bg-blue-800"><Plus className="w-4 h-4" /></button>
+          <button onClick={create} className="bg-ivry-navy text-white px-3 py-2 rounded hover:bg-ivry-navy-dark"><Plus className="w-4 h-4" /></button>
         )}
       </div>
 
       <div className="space-y-1.5 max-h-64 overflow-y-auto">
         {formations.map((f) => (
-          <div key={f.id} className="border rounded-lg p-3 flex items-center justify-between">
+          <div key={f.id} className="border rounded p-3 flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{f.libelle}</p>
               {f.description && <p className="text-xs text-gray-500 truncate">{f.description}</p>}
             </div>
             <div className="flex gap-1.5 ml-2 shrink-0">
-              <button onClick={() => startEdit(f)} className="text-blue-600 hover:text-blue-800"><Pencil className="w-3.5 h-3.5" /></button>
+              <button onClick={() => startEdit(f)} className="text-ivry-navy hover:text-ivry-navy-dark"><Pencil className="w-3.5 h-3.5" /></button>
               <button onClick={() => remove(f.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           </div>
@@ -124,34 +124,34 @@ function AxesSection() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="bg-white rounded shadow-sm p-6">
       <div className="flex items-center gap-2 mb-4">
-        <Target className="w-5 h-5 text-blue-700" />
+        <Target className="w-5 h-5 text-ivry-navy" />
         <h2 className="text-lg font-bold">Axes de formation</h2>
       </div>
 
       <div className="flex gap-2 mb-4">
-        <input type="text" placeholder="Libellé" value={form.libelle} onChange={(e) => setForm({ ...form, libelle: e.target.value })} className="flex-1 border rounded-lg px-3 py-2 text-sm" />
-        <input type="text" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="flex-1 border rounded-lg px-3 py-2 text-sm" />
+        <input type="text" placeholder="Libellé" value={form.libelle} onChange={(e) => setForm({ ...form, libelle: e.target.value })} className="flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
+        <input type="text" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
         {editingId ? (
           <>
-            <button onClick={() => update(editingId)} className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700"><Check className="w-4 h-4" /></button>
-            <button onClick={cancelEdit} className="bg-gray-400 text-white px-3 py-2 rounded-lg hover:bg-gray-500"><X className="w-4 h-4" /></button>
+            <button onClick={() => update(editingId)} className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"><Check className="w-4 h-4" /></button>
+            <button onClick={cancelEdit} className="bg-gray-400 text-white px-3 py-2 rounded hover:bg-gray-500"><X className="w-4 h-4" /></button>
           </>
         ) : (
-          <button onClick={create} className="bg-blue-700 text-white px-3 py-2 rounded-lg hover:bg-blue-800"><Plus className="w-4 h-4" /></button>
+          <button onClick={create} className="bg-ivry-navy text-white px-3 py-2 rounded hover:bg-ivry-navy-dark"><Plus className="w-4 h-4" /></button>
         )}
       </div>
 
       <div className="space-y-1.5 max-h-64 overflow-y-auto">
         {axes.map((a) => (
-          <div key={a.id} className="border rounded-lg p-3 flex items-center justify-between">
+          <div key={a.id} className="border rounded p-3 flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{a.libelle}</p>
               {a.description && <p className="text-xs text-gray-500 truncate">{a.description}</p>}
             </div>
             <div className="flex gap-1.5 ml-2 shrink-0">
-              <button onClick={() => startEdit(a)} className="text-blue-600 hover:text-blue-800"><Pencil className="w-3.5 h-3.5" /></button>
+              <button onClick={() => startEdit(a)} className="text-ivry-navy hover:text-ivry-navy-dark"><Pencil className="w-3.5 h-3.5" /></button>
               <button onClick={() => remove(a.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           </div>
@@ -218,33 +218,33 @@ function ApiConfigSection() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="bg-white rounded shadow-sm p-6">
       <div className="flex items-center gap-2 mb-4">
-        <Settings className="w-5 h-5 text-blue-700" />
+        <Settings className="w-5 h-5 text-ivry-navy" />
         <h2 className="text-lg font-bold">API Villes</h2>
       </div>
 
       <div className="space-y-4 mb-4">
-        <div className="border rounded-lg p-4">
+        <div className="border rounded p-4">
           <p className="text-sm font-medium mb-2">API APM (Authentification AD, Mail)</p>
           <div className="space-y-2">
-            <input type="text" placeholder="URL" value={form.apmUrl} onChange={(e) => setForm({ ...form, apmUrl: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono" />
-            <input type="text" placeholder="Clé API" value={form.apmKey} onChange={(e) => setForm({ ...form, apmKey: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono" />
+            <input type="text" placeholder="URL" value={form.apmUrl} onChange={(e) => setForm({ ...form, apmUrl: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
+            <input type="text" placeholder="Clé API" value={form.apmKey} onChange={(e) => setForm({ ...form, apmKey: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
           </div>
         </div>
-        <div className="border rounded-lg p-4">
+        <div className="border rounded p-4">
           <p className="text-sm font-medium mb-2">API Hub DSI (Organisation)</p>
           <div className="space-y-2">
-            <input type="text" placeholder="URL de base" value={form.hubdsiUrl} onChange={(e) => setForm({ ...form, hubdsiUrl: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono" />
-            <input type="text" placeholder="Clé API" value={form.hubdsiKey} onChange={(e) => setForm({ ...form, hubdsiKey: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono" />
-            <input type="text" placeholder="Chemin de l'endpoint (ex: /api/directions-services)" value={form.hubdsiPath} onChange={(e) => setForm({ ...form, hubdsiPath: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono" />
+            <input type="text" placeholder="URL de base" value={form.hubdsiUrl} onChange={(e) => setForm({ ...form, hubdsiUrl: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
+            <input type="text" placeholder="Clé API" value={form.hubdsiKey} onChange={(e) => setForm({ ...form, hubdsiKey: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
+            <input type="text" placeholder="Chemin de l'endpoint (ex: /api/directions-services)" value={form.hubdsiPath} onChange={(e) => setForm({ ...form, hubdsiPath: e.target.value })} className="w-full border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
             {form.hubdsiUrl && form.hubdsiPath && <code className="block bg-gray-100 rounded px-2 py-1 text-xs mt-1">{form.hubdsiUrl}{form.hubdsiPath}</code>}
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-3 mb-4">
-        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm">
+        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 text-sm">
           <Save className="w-4 h-4" /> {saving ? 'Enregistrement...' : 'Enregistrer'}
         </button>
         {saved && <span className="text-green-600 text-sm">✓ Configuration sauvegardée</span>}
@@ -254,8 +254,8 @@ function ApiConfigSection() {
         <div>
           <p className="text-sm font-medium mb-2">Rechercher un agent dans l'AD</p>
           <div className="flex gap-2">
-            <input type="text" placeholder="Nom d'utilisateur (ex: machevalier)" value={form.testUsername} onChange={(e) => setForm({ ...form, testUsername: e.target.value })} className="flex-1 border rounded px-3 py-2 text-sm" />
-            <button onClick={testApm} disabled={testing !== null || !form.testUsername} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm">
+            <input type="text" placeholder="Nom d'utilisateur (ex: machevalier)" value={form.testUsername} onChange={(e) => setForm({ ...form, testUsername: e.target.value })} className="flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
+            <button onClick={testApm} disabled={testing !== null || !form.testUsername} className="flex items-center gap-2 bg-ivry-navy text-white px-4 py-2 rounded hover:bg-ivry-navy-dark disabled:opacity-50 text-sm">
               {testing === 'apm' ? <Loader className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
               Chercher
             </button>
@@ -278,7 +278,7 @@ function ApiConfigSection() {
           <p className="text-sm font-medium mb-2">Tester l'API Hub DSI</p>
           <div className="flex gap-2">
             <code className="flex-1 bg-gray-100 rounded px-3 py-2 text-xs font-mono truncate">{form.hubdsiUrl || 'URL non configurée'}{form.hubdsiPath}</code>
-            <button onClick={testHubdsi} disabled={testing !== null} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm">
+            <button onClick={testHubdsi} disabled={testing !== null} className="flex items-center gap-2 bg-ivry-navy text-white px-4 py-2 rounded hover:bg-ivry-navy-dark disabled:opacity-50 text-sm">
               {testing === 'hubdsi' ? <Loader className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
               Tester
             </button>
@@ -352,9 +352,9 @@ function ServiceFormationSection() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="bg-white rounded shadow-sm p-6">
       <div className="flex items-center gap-2 mb-4">
-        <Users className="w-5 h-5 text-blue-700" />
+        <Users className="w-5 h-5 text-ivry-navy" />
         <h2 className="text-lg font-bold">Service Formation</h2>
         {saving && <Loader className="w-4 h-4 animate-spin text-gray-400" />}
       </div>
@@ -368,17 +368,17 @@ function ServiceFormationSection() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm"
+            className="w-full border rounded pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy"
           />
         </div>
-        <button onClick={handleSearch} disabled={searching || !searchQuery.trim()} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm whitespace-nowrap">
+        <button onClick={handleSearch} disabled={searching || !searchQuery.trim()} className="flex items-center gap-2 bg-ivry-navy text-white px-4 py-2 rounded hover:bg-ivry-navy-dark disabled:opacity-50 text-sm whitespace-nowrap">
           {searching ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           Chercher
         </button>
       </div>
 
       {searchResults.length > 0 && (
-        <div className="mb-4 border rounded-lg divide-y max-h-48 overflow-y-auto">
+        <div className="mb-4 border rounded divide-y max-h-48 overflow-y-auto">
           {searchResults.filter((r) => r.mail || r.email).map((r, i) => {
             const mail = r.mail || r.email || '';
             return (
@@ -390,7 +390,7 @@ function ServiceFormationSection() {
                 <button
                   onClick={() => add(mail)}
                   disabled={emails.includes(mail)}
-                  className={`ml-2 shrink-0 p-1.5 rounded ${emails.includes(mail) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
+                  className={`ml-2 shrink-0 p-1.5 rounded ${emails.includes(mail) ? 'text-gray-300 cursor-not-allowed' : 'text-ivry-navy hover:bg-ivry-navy/5'}`}
                   title={emails.includes(mail) ? 'Déjà ajouté' : 'Ajouter'}
                 >
                   <UserPlus className="w-4 h-4" />
@@ -404,7 +404,7 @@ function ServiceFormationSection() {
       <div className="space-y-1.5 max-h-48 overflow-y-auto">
         {emails.length === 0 && <p className="text-sm text-gray-400 italic">Aucun agent ajouté</p>}
         {emails.map((mail) => (
-          <div key={mail} className="border rounded-lg px-3 py-2 flex items-center justify-between">
+          <div key={mail} className="border rounded px-3 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
               <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
               <span className="text-sm truncate">{mail}</span>
@@ -423,7 +423,7 @@ export default function Parametrage() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center gap-2 mb-6">
-        <Settings className="w-6 h-6 text-blue-700" />
+        <Settings className="w-6 h-6 text-ivry-navy" />
         <h1 className="text-2xl font-bold">Paramétrage</h1>
       </div>
 

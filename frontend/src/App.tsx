@@ -19,7 +19,7 @@ export default function App() {
   const token = localStorage.getItem('token');
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-100">
       {token && <Navbar />}
       <Routes>
         <Route path="/login" element={<Login />} />

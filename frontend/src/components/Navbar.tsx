@@ -4,7 +4,7 @@ import { ClipboardList, ClipboardCheck, Settings, LogOut } from 'lucide-react';
 const links = [
   { path: '/collecte', label: 'Collecte', icon: ClipboardList },
   { path: '/traitement', label: 'Traitement', icon: ClipboardCheck },
-  { path: '/param', label: 'Param', icon: Settings },
+  { path: '/param', label: 'Paramétrage', icon: Settings },
 ];
 
 export default function Navbar() {
@@ -23,31 +23,55 @@ export default function Navbar() {
   const visibleLinks = links.filter(l => l.path !== '/param' || role === 'admin');
 
   return (
-    <nav className="bg-white border-b shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-1">
+    <header className="bg-ivry-navy shadow-lg">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-4">
+            <img
+              src="https://ivryetmoi.ivry94.fr/Theme/Img/logo.svg"
+              alt="Ivry-sur-Seine"
+              className="h-9 brightness-0 invert"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+            <div className="border-l border-white/25 pl-4">
+              <p className="text-white font-bold text-sm leading-tight tracking-wide uppercase">
+                Plan de formation 2027–2029
+              </p>
+              <p className="text-white/50 text-xs">Ville d'Ivry-sur-Seine</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-white/70 text-sm">{displayName}</span>
+            <button
+              onClick={handleLogout}
+              title="Déconnexion"
+              className="text-white/40 hover:text-ivry-red transition-colors p-1"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <nav className="flex">
           {visibleLinks.map((l) => {
             const active = location.pathname === l.path;
             return (
               <button
                 key={l.path}
                 onClick={() => navigate(l.path)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition
-                  ${active ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors
+                  ${active
+                    ? 'border-ivry-red text-white'
+                    : 'border-transparent text-white/50 hover:text-white/80 hover:border-white/20'
+                  }`}
               >
                 <l.icon className="w-4 h-4" />
                 {l.label}
               </button>
             );
           })}
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">{displayName}</span>
-          <button onClick={handleLogout} className="text-gray-400 hover:text-red-600">
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+        </nav>
       </div>
-    </nav>
+    </header>
   );
 }
