@@ -248,39 +248,9 @@ export default function Collecte() {
         {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
         {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</p>}
 
-        <div className="overflow-x-auto rounded border shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <th className="px-3 py-3">Date</th>
-                <th className="px-3 py-3">Formation</th>
-                <th className="px-3 py-3">Axe</th>
-                <th className="px-3 py-3">Agents</th>
-                <th className="px-3 py-3">Statut</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {allRows.map((r) => (
-                <tr key={r.key} className={`hover:bg-gray-50 ${r.statut !== 'en_attente' ? 'text-gray-400' : ''}`}>
-                  <td className="px-3 py-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
-                  <td className="px-3 py-2">{r.formation_libelle || '—'}</td>
-                  <td className="px-3 py-2 text-gray-500">
-                    {r.axe_libelle
-                      ? r.axe_description
-                        ? `${r.axe_libelle} — ${r.axe_description}`
-                        : r.axe_libelle
-                      : '—'}
-                  </td>
-                  <td className="px-3 py-2">{r.nb_agents}</td>
-                  <td className="px-3 py-2">
-                    {badge(r.statut)}
-                    {r.motif_refus && <p className="text-xs text-red-500 mt-1 max-w-40">{r.motif_refus}</p>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {section('Réglementaires', groupedRows.reg)}
+        {section('CNFPT', groupedRows.cnfpt)}
+        {section('Hors CNFPT', groupedRows.horsCnfpt, groupedRows.totalHorsCnfpt)}
 
         {!allRows.length && (
           <p className="text-center text-gray-400 py-16">Aucune demande trouvée.</p>
