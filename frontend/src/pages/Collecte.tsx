@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Plus, Trash2, LogOut, ClipboardList, BookOpen, GraduationCap } from 'lucide-react';
+import { Send, LogOut, ClipboardList, BookOpen, GraduationCap, List, FileEdit } from 'lucide-react';
 import api from '../api/axios';
-import type { Formation, Axe } from '../types';
+import type { Formation, Axe, Soumission } from '../types';
 
 interface DirectionService {
   direction?: string;
@@ -52,16 +52,25 @@ function emptyAutre(): DetailRowAutre {
   return { type: 'autre', axe_id: 0, nb_agents: 1, intitule: '', objectif: '', date_souhaitee: [], organisme: 'CNFPT', organisme_nom: '', justification: '', estimation_budget: '' };
 }
 
+function badge(s: string) {
+  const c = s === 'en_attente' ? 'bg-yellow-100 text-yellow-800'
+    : s === 'valide' ? 'bg-green-100 text-green-800'
+    : 'bg-red-100 text-red-800';
+  return <span className={`text-xs px-2 py-0.5 rounded ${c}`}>{s === 'en_attente' ? 'En attente' : s === 'valide' ? 'Validé' : 'Refusé'}</span>;
+}
+
 export default function Collecte() {
   const navigate = useNavigate();
   const [formations, setFormations] = useState<Formation[]>([]);
   const [axes, setAxes] = useState<Axe[]>([]);
   const [service, setService] = useState('');
   const [direction, setDirection] = useState('');
-  const [details, setDetails] = useState<DetailRow[]>([emptyReg()]);
+  const [detail, setDetail] = useState<DetailRow>(emptyReg());
   const [success, setSuccess] = useState('');
   const [directionsServices, setDirectionsServices] = useState<DirectionService[]>([]);
   const [loadingOrg, setLoadingOrg] = useState(true);
+  const [view, setView] = useState<'form' | 'list'>('list');
+  const [mesSoumissions, setMesSoumissions] = useState<Soumission[]>([]);
 
   const dsName = (ds: DirectionService) => ds.direction ?? ds.name ?? ds.label ?? '';
   const dsServices = (ds: DirectionService) => ds.services ?? ds.children ?? ds.services_list ?? [];
@@ -75,47 +84,138 @@ export default function Collecte() {
         : data.directions ?? data.data ?? data.items ?? data.results ?? data.organisations ?? [];
       setDirectionsServices(Array.isArray(list) ? list : []);
     }).catch(() => setDirectionsServices([])).finally(() => setLoadingOrg(false));
+    api.get('/api/v1/collecte/mes-soumissions').then(({ data }) => setMesSoumissions(data || [])).catch(() => {});
   }, []);
 
-  function addRow(type: 'reglementaire' | 'autre') {
-    setDetails([...details, type === 'reglementaire' ? emptyReg() : emptyAutre()]);
+  function axeLabel(a: Axe) {
+    return a.description ? `${a.libelle} — ${a.description}` : a.libelle;
   }
 
-  function removeRow(i: number) {
-    if (details.length > 1) setDetails(details.filter((_, idx) => idx !== i));
+  function updateDetail(field: string, value: any) {
+    setDetail((prev) => ({ ...prev, [field]: value } as DetailRow));
   }
 
-  function updateRow(i: number, field: string, value: any) {
-    const copy = [...details] as any[];
-    copy[i][field] = value;
-    setDetails(copy);
-  }
-
-  function toggleYear(i: number, year: number) {
-    const d = details[i];
-    if (d.type !== 'autre') return;
-    const current = d.date_souhaitee;
+  function toggleYear(year: number) {
+    if (detail.type !== 'autre') return;
+    const current = detail.date_souhaitee;
     const next = current.includes(year) ? current.filter((y) => y !== year) : [...current, year];
-    updateRow(i, 'date_souhaitee', next);
+    updateDetail('date_souhaitee', next);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await api.post('/api/v1/collecte/soumettre', { service, direction, details });
+      await api.post('/api/v1/collecte/soumettre', { service, direction, details: [detail] });
       setSuccess('Demande envoyée avec succès !');
-      setDetails([emptyReg()]);
+      setDetail(emptyReg());
       setService('');
       setDirection('');
+      const { data } = await api.get('/api/v1/collecte/mes-soumissions');
+      setMesSoumissions(data || []);
+      setView('list');
     } catch {
       setSuccess('');
     }
+  }
+
+  function handleNewDemande() {
+    setSuccess('');
+    setView('form');
   }
 
   function handleLogout() {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     navigate('/login');
+  }
+
+  const allRows = useMemo(() => {
+    return mesSoumissions.flatMap((s) => {
+      const details = s.details?.length ? s.details : [];
+      if (!details.length) {
+        return [{
+          key: `${s.id}-0`,
+          created_at: s.created_at,
+          formation_libelle: '',
+          axe_libelle: null as string | null,
+          axe_description: null as string | null,
+          nb_agents: 0,
+          statut: s.statut,
+          motif_refus: s.motif_refus,
+        }];
+      }
+      return details.map((d) => ({
+        key: `${s.id}-${d.id}`,
+        created_at: s.created_at,
+        formation_libelle: d.type === 'autre' ? (d.intitule || 'Formation autre') : (d.formation_libelle || ''),
+        axe_libelle: d.axe_libelle || null,
+        axe_description: d.axe_description || null,
+        nb_agents: d.nb_agents,
+        statut: (d.statut as 'en_attente' | 'valide' | 'refuse') ?? s.statut,
+        motif_refus: d.motif_refus ?? s.motif_refus,
+      }));
+    });
+  }, [mesSoumissions]);
+
+  if (view === 'list') {
+    return (
+      <div className="max-w-5xl mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <List className="w-6 h-6 text-green-600" />
+            <h1 className="text-2xl font-bold">Demandes soumises</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={handleNewDemande} className="flex items-center gap-1.5 bg-ivry-navy text-white px-4 py-2 rounded text-sm hover:bg-ivry-navy-dark transition">
+              <FileEdit className="w-4 h-4" /> Soumettre une autre demande
+            </button>
+            <button onClick={handleLogout} className="flex items-center gap-1 text-gray-500 hover:text-ivry-red">
+              <LogOut className="w-4 h-4" /> Déconnexion
+            </button>
+          </div>
+        </div>
+
+        {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
+
+        <div className="overflow-x-auto rounded border shadow-sm">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3">Date</th>
+                <th className="px-3 py-3">Formation</th>
+                <th className="px-3 py-3">Axe</th>
+                <th className="px-3 py-3">Agents</th>
+                <th className="px-3 py-3">Statut</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {allRows.map((r) => (
+                <tr key={r.key} className={`hover:bg-gray-50 ${r.statut !== 'en_attente' ? 'text-gray-400' : ''}`}>
+                  <td className="px-3 py-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
+                  <td className="px-3 py-2">{r.formation_libelle || '—'}</td>
+                  <td className="px-3 py-2 text-gray-500">
+                    {r.axe_libelle
+                      ? r.axe_description
+                        ? `${r.axe_libelle} — ${r.axe_description}`
+                        : r.axe_libelle
+                      : '—'}
+                  </td>
+                  <td className="px-3 py-2">{r.nb_agents}</td>
+                  <td className="px-3 py-2">
+                    {badge(r.statut)}
+                    {r.motif_refus && <p className="text-xs text-red-500 mt-1 max-w-40">{r.motif_refus}</p>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {!allRows.length && (
+          <p className="text-center text-gray-400 py-16">Aucune demande trouvée.</p>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -150,129 +250,113 @@ export default function Collecte() {
           </div>
         </div>
 
-        <h2 className="font-semibold text-lg mt-6">Besoins en formation</h2>
-        {details.map((row, i) => (
-          <div key={i} className="border rounded p-4 space-y-3 relative">
-            <div className="flex items-center gap-1 mb-2">
-              <button type="button" onClick={() => { const copy = [...details]; copy[i] = emptyReg() as any; setDetails(copy); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition ${row.type === 'reglementaire' ? 'bg-ivry-navy/10 text-ivry-navy' : 'text-gray-500 hover:bg-gray-100'}`}>
-                <BookOpen className="w-4 h-4" /> Réglementaire
-              </button>
-              <button type="button" onClick={() => { const copy = [...details]; copy[i] = emptyAutre() as any; setDetails(copy); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition ${row.type === 'autre' ? 'bg-ivry-red/10 text-ivry-red' : 'text-gray-500 hover:bg-gray-100'}`}>
-                <GraduationCap className="w-4 h-4" /> Autre formation
-              </button>
-              {details.length > 1 && (
-                <button type="button" onClick={() => removeRow(i)} className="ml-auto text-red-500 hover:text-red-700 p-1">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {row.type === 'reglementaire' ? (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium mb-1">Formation réglementaire</label>
-                    <select value={row.formation_id} onChange={(e) => updateRow(i, 'formation_id', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm" required>
-                      <option value={0}>Sélectionner...</option>
-                      {formations.map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1">Axe</label>
-                    <select value={row.axe_id} onChange={(e) => updateRow(i, 'axe_id', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm">
-                      <option value={0}>Sélectionner...</option>
-                      {axes.map((a) => <option key={a.id} value={a.id}>{a.libelle}</option>)}
-                    </select>
-                    {(() => { const a = axes.find(x => x.id === row.axe_id); return a ? <p className="text-xs text-gray-500 mt-1 italic">{a.libelle}{a.description ? ` — ${a.description}` : ''}</p> : null; })()}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1">Motivation</label>
-                  <textarea value={row.motivation} onChange={(e) => updateRow(i, 'motivation', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} />
-                </div>
-                <div className="w-24">
-                  <label className="block text-xs font-medium mb-1">Nombre d'agents</label>
-                  <input type="number" min={1} value={row.nb_agents} onChange={(e) => updateRow(i, 'nb_agents', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm" required />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium mb-1">Intitulé de la formation</label>
-                    <input type="text" value={row.intitule} onChange={(e) => updateRow(i, 'intitule', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Ex: Gestion du stress, Excel avancé..." />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1">Objectif</label>
-                  <textarea value={row.objectif} onChange={(e) => updateRow(i, 'objectif', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} required placeholder="Décrivez l'objectif de cette formation..." />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1">Rapprochement au projet d'administration (Axe)</label>
-                  <select value={row.axe_id} onChange={(e) => updateRow(i, 'axe_id', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm">
-                    <option value={0}>Sélectionner...</option>
-                    {axes.map((a) => <option key={a.id} value={a.id}>{a.libelle}</option>)}
-                  </select>
-                  {(() => { const a = axes.find(x => x.id === Number(row.axe_id)); return a ? <p className="text-xs text-gray-500 mt-1 italic">{a.libelle}{a.description ? ` — ${a.description}` : ''}</p> : null; })()}
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1">Date de mise en œuvre souhaitée</label>
-                  <div className="flex gap-3">
-                    {YEARS.map((y) => (
-                      <label key={y} className="flex items-center gap-1.5 text-sm cursor-pointer">
-                        <input type="checkbox" checked={row.date_souhaitee.includes(y)} onChange={() => toggleYear(i, y)} className="accent-[#EC4B52]" />
-                        {y}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1">Organisme pressenti</label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                      <input type="radio" name={`orga-${i}`} checked={row.organisme === 'CNFPT'} onChange={() => updateRow(i, 'organisme', 'CNFPT')} className="accent-[#29345C]" />
-                      CNFPT
-                    </label>
-                    <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                      <input type="radio" name={`orga-${i}`} checked={row.organisme === 'autre'} onChange={() => updateRow(i, 'organisme', 'autre')} className="accent-[#29345C]" />
-                      Autre
-                    </label>
-                  </div>
-                </div>
-                {row.organisme === 'autre' && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-medium mb-1">Nom de l'organisme</label>
-                      <input type="text" value={row.organisme_nom} onChange={(e) => updateRow(i, 'organisme_nom', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Nom de l'organisme externe" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium mb-1">Justification du recours à un organisme externe</label>
-                      <textarea value={row.justification} onChange={(e) => updateRow(i, 'justification', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} required placeholder="Pourquoi le CNFPT n'a pas été retenu pour ce besoin spécifique ?" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium mb-1">Estimation budgétaire</label>
-                      <input type="text" value={row.estimation_budget} onChange={(e) => updateRow(i, 'estimation_budget', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Ex: 5 000 €" />
-                    </div>
-                  </>
-                )}
-                <div className="w-24">
-                  <label className="block text-xs font-medium mb-1">Nombre d'agents</label>
-                  <input type="number" min={1} value={row.nb_agents} onChange={(e) => updateRow(i, 'nb_agents', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm" required />
-                </div>
-              </>
-            )}
+        <h2 className="font-semibold text-lg mt-6">Besoin en formation</h2>
+        <div className="border rounded p-4 space-y-3">
+          <div className="flex items-center gap-1 mb-2">
+            <button type="button" onClick={() => setDetail(emptyReg())}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition ${detail.type === 'reglementaire' ? 'bg-ivry-navy/10 text-ivry-navy' : 'text-gray-500 hover:bg-gray-100'}`}>
+              <BookOpen className="w-4 h-4" /> Réglementaire
+            </button>
+            <button type="button" onClick={() => setDetail(emptyAutre())}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition ${detail.type === 'autre' ? 'bg-ivry-red/10 text-ivry-red' : 'text-gray-500 hover:bg-gray-100'}`}>
+              <GraduationCap className="w-4 h-4" /> Autre formation
+            </button>
           </div>
-        ))}
 
-        <div className="flex gap-2">
-          <button type="button" onClick={() => addRow('reglementaire')} className="flex items-center gap-1 text-ivry-navy hover:text-ivry-navy-dark text-sm">
-            <Plus className="w-4 h-4" /> Ajouter formation réglementaire
-          </button>
-          <button type="button" onClick={() => addRow('autre')} className="flex items-center gap-1 text-ivry-red hover:text-ivry-red-dark text-sm">
-            <Plus className="w-4 h-4" /> Ajouter autre formation
-          </button>
+          {detail.type === 'reglementaire' ? (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1">Formation réglementaire</label>
+                  <select value={detail.formation_id} onChange={(e) => updateDetail('formation_id', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm" required>
+                    <option value={0}>Sélectionner...</option>
+                    {formations.map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Axe</label>
+                  <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm">
+                    <option value={0}>Sélectionner...</option>
+                    {axes.map((a) => <option key={a.id} value={a.id}>{axeLabel(a)}</option>)}
+                  </select>
+                  {(() => { const a = axes.find(x => x.id === detail.axe_id); return a ? <p className="text-xs text-gray-500 mt-1 italic">{a.libelle}{a.description ? ` — ${a.description}` : ''}</p> : null; })()}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Motivation</label>
+                <textarea value={detail.motivation} onChange={(e) => updateDetail('motivation', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} />
+              </div>
+              <div className="w-24">
+                <label className="block text-xs font-medium mb-1">Nombre d'agents</label>
+                <input type="number" min={1} value={detail.nb_agents} onChange={(e) => updateDetail('nb_agents', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm" required />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium mb-1">Intitulé de la formation</label>
+                  <input type="text" value={detail.intitule} onChange={(e) => updateDetail('intitule', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Ex: Gestion du stress, Excel avancé..." />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Objectif</label>
+                <textarea value={detail.objectif} onChange={(e) => updateDetail('objectif', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} required placeholder="Décrivez l'objectif de cette formation..." />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Rapprochement au projet d'administration (Axe)</label>
+                <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm">
+                  <option value={0}>Sélectionner...</option>
+                  {axes.map((a) => <option key={a.id} value={a.id}>{axeLabel(a)}</option>)}
+                </select>
+                {(() => { const a = axes.find(x => x.id === Number(detail.axe_id)); return a ? <p className="text-xs text-gray-500 mt-1 italic">{a.libelle}{a.description ? ` — ${a.description}` : ''}</p> : null; })()}
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Date de mise en œuvre souhaitée</label>
+                <div className="flex gap-3">
+                  {YEARS.map((y) => (
+                    <label key={y} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                      <input type="checkbox" checked={detail.date_souhaitee.includes(y)} onChange={() => toggleYear(y)} className="accent-[#EC4B52]" />
+                      {y}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Organisme pressenti</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <input type="radio" name="orga" checked={detail.organisme === 'CNFPT'} onChange={() => updateDetail('organisme', 'CNFPT')} className="accent-[#29345C]" />
+                    CNFPT
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <input type="radio" name="orga" checked={detail.organisme === 'autre'} onChange={() => updateDetail('organisme', 'autre')} className="accent-[#29345C]" />
+                    Autre
+                  </label>
+                </div>
+              </div>
+              {detail.organisme === 'autre' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Nom de l'organisme</label>
+                    <input type="text" value={detail.organisme_nom} onChange={(e) => updateDetail('organisme_nom', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Nom de l'organisme externe" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Justification du recours à un organisme externe</label>
+                    <textarea value={detail.justification} onChange={(e) => updateDetail('justification', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} required placeholder="Pourquoi le CNFPT n'a pas été retenu pour ce besoin spécifique ?" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Estimation budgétaire</label>
+                    <input type="text" value={detail.estimation_budget} onChange={(e) => updateDetail('estimation_budget', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Ex: 5 000 €" />
+                  </div>
+                </>
+              )}
+              <div className="w-24">
+                <label className="block text-xs font-medium mb-1">Nombre d'agents</label>
+                <input type="number" min={1} value={detail.nb_agents} onChange={(e) => updateDetail('nb_agents', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm" required />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex justify-end pt-4">

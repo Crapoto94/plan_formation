@@ -25,6 +25,7 @@ export interface SoumissionDetail {
   nb_agents: number;
   formation_libelle?: string;
   axe_libelle?: string;
+  axe_description?: string;
   type?: 'reglementaire' | 'autre';
   intitule?: string;
   objectif?: string;
@@ -33,6 +34,8 @@ export interface SoumissionDetail {
   organisme_nom?: string;
   justification?: string;
   estimation_budget?: string;
+  statut?: 'en_attente' | 'valide' | 'refuse';
+  motif_refus?: string;
 }
 
 export interface Soumission {

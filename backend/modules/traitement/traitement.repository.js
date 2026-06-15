@@ -9,6 +9,7 @@ const BASE = `
     'nb_agents', sd.nb_agents,
     'formation_libelle', f.libelle,
     'axe_libelle', a.libelle,
+    'axe_description', a.description,
     'type', sd.type,
     'intitule', sd.intitule,
     'objectif', sd.objectif,
@@ -16,7 +17,9 @@ const BASE = `
     'organisme', sd.organisme,
     'organisme_nom', sd.organisme_nom,
     'justification', sd.justification,
-    'estimation_budget', sd.estimation_budget
+    'estimation_budget', sd.estimation_budget,
+    'statut', sd.statut,
+    'motif_refus', sd.motif_refus
   )) as details
   FROM formation.soumissions s
   LEFT JOIN formation.soumission_details sd ON sd.soumission_id = s.id
@@ -75,4 +78,36 @@ function updateCommentaire(id, commentaire) {
   );
 }
 
-module.exports = { findAll, findByStatut, findByDirection, findByService, findByAgent, findById, updateStatut, batchUpdateStatut, updateCommentaire };
+function batchUpdateDetailStatut(detailIds, statut, motif) {
+  const placeholders = detailIds.map((_, i) => `$${i + 1}`).join(',');
+  const offset = detailIds.length + 1;
+  return db.all(
+    `UPDATE formation.soumission_details
+     SET statut = $${offset}, motif_refus = COALESCE($${offset + 1}, motif_refus)
+     WHERE id IN (${placeholders}) RETURNING *`,
+    [...detailIds, statut, motif || null]
+  );
+}
+
+function getSoumissionIdByDetail(detailId) {
+  return db.get(
+    `SELECT soumission_id FROM formation.soumission_details WHERE id = $1`,
+    [detailId]
+  );
+}
+
+function getDetailsBySoumission(soumissionId) {
+  return db.all(
+    `SELECT * FROM formation.soumission_details WHERE soumission_id = $1`,
+    [soumissionId]
+  );
+}
+
+function updateSoumissionStatut(id, statut) {
+  return db.get(
+    `UPDATE formation.soumissions SET statut = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
+    [statut, id]
+  );
+}
+
+module.exports = { findAll, findByStatut, findByDirection, findByService, findByAgent, findById, updateStatut, batchUpdateStatut, updateCommentaire, batchUpdateDetailStatut, getSoumissionIdByDetail, getDetailsBySoumission, updateSoumissionStatut };

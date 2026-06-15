@@ -1,6 +1,7 @@
 const repo = require('./traitement.repository');
 const hubdsi = require('../../services/hubdsi');
 const config = require('../../services/config');
+const apm = require('../../services/apm');
 
 function matchName(field, username, displayName) {
   if (!field) return false;
@@ -113,21 +114,74 @@ async function canValidate(req) {
   return false;
 }
 
+async function sendNotification(agentEmail, agentName, details, statut, motif) {
+  try {
+    const lines = details.map((d) => {
+      const f = d.type === 'autre' ? (d.intitule || 'Formation autre') : (d.formation_libelle || 'Formation');
+      const axe = d.axe_libelle ? `${d.axe_libelle}${d.axe_description ? ' — ' + d.axe_description : ''}` : '';
+      return `${f}${axe ? ' (' + axe + ')' : ''} — ${d.nb_agents} agent(s)`;
+    });
+    const action = statut === 'valide' ? 'validée' : 'refusée';
+    const subject = `Demande de formation ${action}`;
+    const content = [
+      `Bonjour ${agentName},`,
+      ``,
+      `Votre demande de formation a été ${action}.`,
+      motif ? `Motif : ${motif}` : '',
+      ``,
+      `Récapitulatif :`,
+      ...lines.map((l) => `- ${l}`),
+      ``,
+      `Cordialement,`,
+      `Service Formation`,
+    ].filter(Boolean).join('\n');
+    await apm.envoyerMail(agentEmail, subject, content);
+  } catch { /* email failure is non-blocking */ }
+}
+
 async function valider(req, res) {
   if (!(await canValidate(req))) return res.status(403).json({ error: 'Réservé aux directeurs et administrateurs' });
-  const { ids, commentaire } = req.body;
-  if (!ids || !ids.length) return res.status(400).json({ error: 'Aucune demande sélectionnée' });
-  const rows = await repo.batchUpdateStatut(ids, 'valide', null);
-  if (commentaire) for (const id of ids) await repo.updateCommentaire(id, commentaire);
+  const { detail_ids, commentaire } = req.body;
+  if (!detail_ids || !detail_ids.length) return res.status(400).json({ error: 'Aucune demande sélectionnée' });
+  const rows = await repo.batchUpdateDetailStatut(detail_ids, 'valide', null);
+  const soumissionIds = [...new Set(rows.map((r) => r.soumission_id))];
+  for (const sid of soumissionIds) {
+    const all = await repo.getDetailsBySoumission(sid);
+    if (all.every((d) => d.statut === 'valide')) {
+      await repo.updateSoumissionStatut(sid, 'valide');
+    }
+  }
+  if (commentaire) for (const sid of soumissionIds) await repo.updateCommentaire(sid, commentaire);
+
+  const soumission = await repo.findById(soumissionIds[0]);
+  if (soumission?.agent_email) {
+    const details = rows.filter((r) => r.soumission_id === soumissionIds[0]);
+    sendNotification(soumission.agent_email, soumission.agent_name, details, 'valide', null);
+  }
+
   res.json({ success: true, count: rows.length });
 }
 
 async function refuser(req, res) {
   if (!(await canValidate(req))) return res.status(403).json({ error: 'Réservé aux directeurs et administrateurs' });
-  const { ids, motif } = req.body;
-  if (!ids || !ids.length) return res.status(400).json({ error: 'Aucune demande sélectionnée' });
+  const { detail_ids, motif } = req.body;
+  if (!detail_ids || !detail_ids.length) return res.status(400).json({ error: 'Aucune demande sélectionnée' });
   if (!motif) return res.status(400).json({ error: 'Motif de refus requis' });
-  const rows = await repo.batchUpdateStatut(ids, 'refuse', motif);
+  const rows = await repo.batchUpdateDetailStatut(detail_ids, 'refuse', motif);
+  const soumissionIds = [...new Set(rows.map((r) => r.soumission_id))];
+  for (const sid of soumissionIds) {
+    const all = await repo.getDetailsBySoumission(sid);
+    if (all.every((d) => d.statut === 'refuse')) {
+      await repo.updateSoumissionStatut(sid, 'refuse');
+    }
+  }
+
+  const soumission = await repo.findById(soumissionIds[0]);
+  if (soumission?.agent_email) {
+    const details = rows.filter((r) => r.soumission_id === soumissionIds[0]);
+    sendNotification(soumission.agent_email, soumission.agent_name, details, 'refuse', motif);
+  }
+
   res.json({ success: true, count: rows.length });
 }
 

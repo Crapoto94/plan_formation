@@ -38,6 +38,7 @@ function findByAgent(agentName) {
        'nb_agents', sd.nb_agents,
        'formation_libelle', f.libelle,
        'axe_libelle', a.libelle,
+       'axe_description', a.description,
        'type', sd.type,
        'intitule', sd.intitule,
        'objectif', sd.objectif,
@@ -45,7 +46,9 @@ function findByAgent(agentName) {
        'organisme', sd.organisme,
        'organisme_nom', sd.organisme_nom,
        'justification', sd.justification,
-       'estimation_budget', sd.estimation_budget
+       'estimation_budget', sd.estimation_budget,
+       'statut', sd.statut,
+       'motif_refus', sd.motif_refus
      )) as details
      FROM formation.soumissions s
      LEFT JOIN formation.soumission_details sd ON sd.soumission_id = s.id
