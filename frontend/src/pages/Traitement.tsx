@@ -65,10 +65,12 @@ export default function Traitement() {
         const { data } = await api.get('/api/v1/auth/me');
         const o = data.org || { role: 'agent', direction: null, service: null };
         setOrg(o);
+        localStorage.setItem('org_role', o.role);
         const { data: reqs } = await api.get('/api/v1/traitement/soumissions');
         setSoumissions(reqs || []);
       } catch {
         setOrg({ role: 'agent', direction: null, service: null });
+        localStorage.setItem('org_role', 'agent');
       } finally {
         setLoading(false);
       }

@@ -19,7 +19,7 @@ async function sendConfirmation(agentEmail, agentName, soumission) {
         const parts = [
           `${num} ${d.intitule || 'Formation'}`,
           d.objectif ? `   Objectif : ${d.objectif}` : null,
-          d.organisme_nom ? `   Organisme : ${d.organisme_nom}` : null,
+          d.organisme === 'CNFPT' ? `   Organisme : CNFPT` : (d.organisme_nom ? `   Organisme : ${d.organisme_nom}` : null),
           formatDateSouhaitee(d.date_souhaitee) ? `   Date souhaitée : ${formatDateSouhaitee(d.date_souhaitee)}` : null,
           d.estimation_budget ? `   Budget estimé : ${d.estimation_budget}` : null,
           `   Nombre d'agents : ${d.nb_agents || 1}`,

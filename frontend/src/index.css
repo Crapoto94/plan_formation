@@ -10,13 +10,13 @@
 
 @layer components {
   .form-section-title {
-    @apply text-xs font-bold uppercase tracking-widest text-ivry-red mt-8 mb-1;
+    @apply text-xs font-bold uppercase tracking-widest text-ivry-red mt-5 mb-1;
   }
   .form-label {
-    @apply block text-sm font-bold mb-2 text-gray-800;
+    @apply block text-sm font-bold mb-1 text-gray-800;
   }
   .form-input {
-    @apply w-full border border-gray-300 rounded px-4 py-3.5 text-base focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy bg-white;
+    @apply w-full border border-gray-300 rounded px-3 py-2.5 text-base focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy bg-white;
   }
 }
 

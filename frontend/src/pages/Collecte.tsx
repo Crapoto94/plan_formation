@@ -299,7 +299,7 @@ export default function Collecte() {
       {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
       {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm p-5 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="form-label">Direction</label>
@@ -318,7 +318,7 @@ export default function Collecte() {
         </div>
 
         <h2 className="form-section-title">Besoin en formation</h2>
-        <div className="border rounded p-6 space-y-5">
+        <div className="border rounded p-4 space-y-4">
           <div className="flex items-center gap-1 mb-2">
             <button type="button" onClick={() => setDetail(emptyReg())}
               className={`flex items-center gap-2 px-4 py-2.5 rounded text-sm font-semibold transition ${detail.type === 'reglementaire' ? 'bg-ivry-navy/10 text-ivry-navy' : 'text-gray-500 hover:bg-gray-100'}`}>
@@ -426,7 +426,7 @@ export default function Collecte() {
           )}
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-end pt-2">
           <button type="submit" className="flex items-center gap-2 bg-ivry-navy text-white px-8 py-3.5 rounded hover:bg-ivry-navy-dark transition text-base font-semibold">
             <Send className="w-4 h-4" /> Soumettre la demande
           </button>
