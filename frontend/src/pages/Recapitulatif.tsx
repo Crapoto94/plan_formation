@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, ChevronDown, ChevronRight, Euro, Shield, LayoutList, Building2 } from 'lucide-react';
+import { BarChart3, ChevronDown, ChevronRight, Euro, Shield, LayoutList, Building2, FileDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import api from '../api/axios';
 
 interface Detail {
@@ -161,6 +162,64 @@ export default function Recapitulatif() {
     setExpanded((p) => ({ ...p, [key]: !p[key] }));
   }
 
+  function exportToExcel() {
+    let rows: Record<string, any>[] = [];
+    let sheetName = 'Récapitulatif';
+
+    if (viewMode === 'obligatoire') {
+      sheetName = 'Formations obligatoires';
+      rows = obligatoireData.map((f) => ({
+        'Formation obligatoire': f.libelle,
+        "Nombre d'agents": f.totalAgents,
+      }));
+    } else if (viewMode === 'domaine') {
+      sheetName = 'Par domaine';
+      for (const g of groupedByDomaine) {
+        for (const s of g.rows) {
+          const details = (s.details || []).filter((d) => (d.domaine_libelle || 'Sans domaine') === g.domaine);
+          for (const d of details) {
+            rows.push({
+              Domaine: g.domaine,
+              Date: new Date(s.created_at).toLocaleDateString('fr-FR'),
+              Demandeur: s.agent_name,
+              Service: s.service,
+              Formation: d.type === 'autre' ? (d.intitule || 'Formation autre') : (d.formation_libelle || ''),
+              Axe: d.axe_libelle || '',
+              Agents: d.nb_agents,
+              'Date souhaitée': formatDate(d.date_souhaitee),
+              'Prix estimé': d.estimation_budget || '',
+              Statut: d.statut || '',
+            });
+          }
+        }
+      }
+    } else {
+      sheetName = 'Par direction';
+      for (const g of grouped) {
+        for (const d of g.details) {
+          rows.push({
+            Direction: g.direction,
+            Date: new Date((data.find((s) => s.agent_name === d.agent_name && s.service === d.service) || {}).created_at || '').toLocaleDateString('fr-FR'),
+            Demandeur: d.agent_name,
+            Service: d.service,
+            Formation: d.type === 'autre' ? (d.intitule || 'Formation autre') : (d.formation_libelle || ''),
+            Domaine: d.domaine_libelle || '',
+            Axe: d.axe_libelle || '',
+            Agents: d.nb_agents,
+            'Date souhaitée': formatDate(d.date_souhaitee),
+            'Prix estimé': d.estimation_budget || '',
+            Statut: d.statut || '',
+          });
+        }
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, `recapitulatif_${viewMode}.xlsx`);
+  }
+
   if (loading) {
     return <div className="w-full px-4 py-4 text-gray-500 text-sm">Chargement...</div>;
   }
@@ -205,6 +264,12 @@ export default function Recapitulatif() {
           className={`flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium transition ${viewMode === 'domaine' ? 'bg-ivry-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
         >
           <LayoutList className="w-4 h-4" /> Par domaine
+        </button>
+        <button
+          onClick={exportToExcel}
+          className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium bg-green-700 text-white hover:bg-green-800 transition ml-auto"
+        >
+          <FileDown className="w-4 h-4" /> Export XLSX
         </button>
       </div>
 
