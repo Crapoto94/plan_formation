@@ -113,6 +113,21 @@ export default function Recapitulatif() {
     return arr;
   }, [data]);
 
+  const obligatoireData = useMemo(() => {
+    const map = new Map<string, { libelle: string; totalAgents: number; submissions: { agent_name: string; service: string; direction: string; nb_agents: number; statut: string }[] }>();
+    for (const s of data) {
+      for (const d of (s.details || [])) {
+        if (d.type !== 'reglementaire' || !d.formation_libelle) continue;
+        const key = d.formation_libelle;
+        if (!map.has(key)) map.set(key, { libelle: key, totalAgents: 0, submissions: [] });
+        const entry = map.get(key)!;
+        entry.totalAgents += d.nb_agents || 0;
+        entry.submissions.push({ agent_name: s.agent_name, service: s.service, direction: s.direction, nb_agents: d.nb_agents || 0, statut: d.statut || '' });
+      }
+    }
+    return [...map.values()].sort((a, b) => a.libelle.localeCompare(b.libelle));
+  }, [data]);
+
   function toggle(dir: string) {
     setExpanded((p) => ({ ...p, [dir]: !p[dir] }));
   }
@@ -132,21 +147,6 @@ export default function Recapitulatif() {
       </div>
     );
   }
-
-  const obligatoireData = useMemo(() => {
-    const map = new Map<string, { libelle: string; totalAgents: number; submissions: { agent_name: string; service: string; direction: string; nb_agents: number; statut: string }[] }>();
-    for (const s of data) {
-      for (const d of (s.details || [])) {
-        if (d.type !== 'reglementaire' || !d.formation_libelle) continue;
-        const key = d.formation_libelle;
-        if (!map.has(key)) map.set(key, { libelle: key, totalAgents: 0, submissions: [] });
-        const entry = map.get(key)!;
-        entry.totalAgents += d.nb_agents || 0;
-        entry.submissions.push({ agent_name: s.agent_name, service: s.service, direction: s.direction, nb_agents: d.nb_agents || 0, statut: d.statut || '' });
-      }
-    }
-    return [...map.values()].sort((a, b) => a.libelle.localeCompare(b.libelle));
-  }, [data]);
 
   return (
     <div className="w-full px-4 py-4">
