@@ -23,6 +23,8 @@ router.put('/config', requireAdmin, controller.updateConfig);
 router.post('/test-apm', requireAdmin, controller.testApm);
 router.post('/test-hubdsi', requireAdmin, controller.testHubdsi);
 
+router.delete('/vider-base', requireAdmin, controller.viderBase);
+
 router.get('/ad/search', requireAdmin, controller.adSearch);
 router.get('/service-formation', requireAdmin, controller.getServiceFormation);
 router.put('/service-formation', requireAdmin, controller.updateServiceFormation);

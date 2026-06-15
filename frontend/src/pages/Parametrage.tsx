@@ -420,6 +420,22 @@ function ServiceFormationSection() {
 }
 
 export default function Parametrage() {
+  const [viderStatus, setViderStatus] = useState<'idle' | 'deleting' | 'done' | 'error'>('idle');
+
+  async function handleVider() {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer toutes les demandes de formation ? Cette action est irréversible.')) return;
+    if (!window.confirm('Confirmation : toutes les demandes soumises (collecte et traitement) seront définitivement effacées. Continuer ?')) return;
+    setViderStatus('deleting');
+    try {
+      await api.delete('/api/v1/admin/vider-base');
+      setViderStatus('done');
+      setTimeout(() => setViderStatus('idle'), 3000);
+    } catch {
+      setViderStatus('error');
+      setTimeout(() => setViderStatus('idle'), 3000);
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center gap-2 mb-6">
@@ -437,6 +453,25 @@ export default function Parametrage() {
       </div>
 
       <ApiConfigSection />
+
+      <div className="mt-8 pt-6 border-t border-red-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-red-600">Zone dangereuse</h3>
+            <p className="text-xs text-gray-500">Supprimer définitivement toutes les demandes de formation</p>
+          </div>
+          <button
+            onClick={handleVider}
+            disabled={viderStatus === 'deleting'}
+            className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700 transition disabled:opacity-50"
+          >
+            {viderStatus === 'deleting' ? <Loader className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Vider la base
+          </button>
+        </div>
+        {viderStatus === 'done' && <p className="text-green-600 text-xs mt-2">Toutes les demandes ont été supprimées.</p>}
+        {viderStatus === 'error' && <p className="text-red-600 text-xs mt-2">Erreur lors de la suppression.</p>}
+      </div>
     </div>
   );
 }

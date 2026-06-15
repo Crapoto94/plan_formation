@@ -140,4 +140,14 @@ async function updateServiceFormation(req, res) {
   res.json({ success: true, emails });
 }
 
-module.exports = { listFormations, createFormation, updateFormation, deleteFormation, listAxes, createAxe, updateAxe, deleteAxe, getConfig, updateConfig, testApm, testHubdsi, adSearch, getServiceFormation, updateServiceFormation };
+async function viderBase(req, res) {
+  try {
+    await repo.viderBase();
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[admin] viderBase error:', err.message);
+    res.status(500).json({ error: 'Erreur lors de la suppression des demandes' });
+  }
+}
+
+module.exports = { listFormations, createFormation, updateFormation, deleteFormation, listAxes, createAxe, updateAxe, deleteAxe, getConfig, updateConfig, testApm, testHubdsi, adSearch, getServiceFormation, updateServiceFormation, viderBase };

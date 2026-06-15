@@ -54,4 +54,8 @@ function deleteAxe(id) {
   return db.run('DELETE FROM formation.axes WHERE id = $1', [id]);
 }
 
-module.exports = { findAllFormations, createFormation, updateFormation, deleteFormation, findAllAxes, createAxe, updateAxe, deleteAxe };
+function viderBase() {
+  return db.run('DELETE FROM formation.soumissions');
+}
+
+module.exports = { findAllFormations, createFormation, updateFormation, deleteFormation, findAllAxes, createAxe, updateAxe, deleteAxe, viderBase };
