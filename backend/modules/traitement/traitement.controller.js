@@ -210,4 +210,13 @@ async function updateCommentaire(req, res) {
   res.json(row);
 }
 
-module.exports = { listSoumissions, getSoumission, valider, refuser, updateCommentaire };
+async function recapitulatif(req, res) {
+  const org = await getUserOrg(req);
+  if (!['admin', 'service_formation', 'directeur'].includes(org.role)) {
+    return res.status(403).json({ error: 'Accès réservé aux administrateurs, DGA et service formation' });
+  }
+  const rows = await repo.findAll();
+  res.json(rows);
+}
+
+module.exports = { listSoumissions, getSoumission, valider, refuser, updateCommentaire, recapitulatif };

@@ -7,6 +7,7 @@ router.use(authenticate);
 
 router.get('/soumissions', controller.listSoumissions);
 router.get('/soumissions/:id', controller.getSoumission);
+router.get('/recapitulatif', controller.recapitulatif);
 
 router.post('/valider', controller.valider);
 router.post('/refuser', controller.refuser);

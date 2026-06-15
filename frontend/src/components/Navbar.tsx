@@ -1,9 +1,12 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ClipboardList, ClipboardCheck, Settings, LogOut } from 'lucide-react';
+import { ClipboardList, ClipboardCheck, BarChart3, Settings, LogOut } from 'lucide-react';
+import api from '../api/axios';
 
 const links = [
   { path: '/collecte', label: 'Collecte', icon: ClipboardList },
   { path: '/traitement', label: 'Traitement', icon: ClipboardCheck },
+  { path: '/recapitulatif', label: 'Récapitulatif', icon: BarChart3 },
   { path: '/param', label: 'Paramétrage', icon: Settings },
 ];
 
@@ -12,15 +15,33 @@ export default function Navbar() {
   const location = useLocation();
   const role = localStorage.getItem('role');
   const displayName = localStorage.getItem('displayName') || '';
+  const [orgRole, setOrgRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get('/api/v1/auth/me').then((r) => {
+      const o = r.data?.org?.role;
+      if (o) { setOrgRole(o); localStorage.setItem('org_role', o); }
+    }).catch(() => { /* ignore */ });
+  }, []);
+
+  const effectiveRole = orgRole || localStorage.getItem('org_role') || role;
+
+  function canShow(path: string) {
+    if (path === '/param') return role === 'admin';
+    if (path === '/traitement') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation';
+    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation';
+    return true;
+  }
 
   function handleLogout() {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    localStorage.removeItem('org_role');
     localStorage.removeItem('displayName');
     navigate('/login');
   }
 
-  const visibleLinks = links.filter(l => l.path !== '/param' || role === 'admin');
+  const visibleLinks = links.filter(l => canShow(l.path));
 
   return (
     <header className="bg-ivry-navy shadow-lg">

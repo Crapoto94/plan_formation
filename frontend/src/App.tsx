@@ -4,6 +4,7 @@ import Collecte from './pages/Collecte';
 import AdminFormations from './pages/AdminFormations';
 import AdminAxes from './pages/AdminAxes';
 import Traitement from './pages/Traitement';
+import Recapitulatif from './pages/Recapitulatif';
 import Parametrage from './pages/Parametrage';
 import Navbar from './components/Navbar';
 
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/admin/formations" element={<ProtectedRoute adminOnly><AdminFormations /></ProtectedRoute>} />
         <Route path="/admin/axes" element={<ProtectedRoute adminOnly><AdminAxes /></ProtectedRoute>} />
         <Route path="/traitement" element={<ProtectedRoute><Traitement /></ProtectedRoute>} />
+        <Route path="/recapitulatif" element={<ProtectedRoute><Recapitulatif /></ProtectedRoute>} />
         <Route path="/param" element={<ProtectedRoute adminOnly><Parametrage /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/collecte" replace />} />
       </Routes>
