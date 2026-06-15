@@ -18,7 +18,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_USERS=${ADMIN_USERS}
     env_file:
-      - .env
+      - ./backend/.env
     networks:
       - formation-net
 
