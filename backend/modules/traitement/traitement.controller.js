@@ -17,9 +17,9 @@ function matchName(field, username, displayName) {
 }
 
 async function getUserOrg(req) {
-  if (req.user.role === 'admin') return { role: 'admin', direction: null, service: null };
+  if (req.user.role === 'admin') return { role: 'admin', direction: null, service: null, fonction: null };
   const email = (req.user.email || '').toLowerCase();
-  if (email && config.getServiceFormation().includes(email)) return { role: 'service_formation', direction: null, service: null };
+  if (email && config.getServiceFormation().includes(email)) return { role: 'service_formation', direction: null, service: null, fonction: null };
   let dirFromEncadrants = '';
   if (email) {
     try {
@@ -29,13 +29,13 @@ async function getUserOrg(req) {
         if (Array.isArray(list)) {
           for (const e of list) {
             if ((e.email || '').toLowerCase() === email) {
-              const role = (e.role || e.fonction || e.type || '').toLowerCase();
+              const rawFonction = (e.role || e.fonction || e.type || '').toLowerCase();
               dirFromEncadrants = e.direction || e.direction_nom || e.direction_label || e.direction_name || e.nom_direction || '';
               const svc = e.service || e.service_nom || e.service_label || e.nom_service || null;
-              if (role === 'responsable_service' || role === 'responsable') {
-                return { role: 'responsable_service', direction: dirFromEncadrants, service: svc };
+              if (rawFonction === 'responsable_service' || rawFonction === 'responsable') {
+                return { role: 'responsable_service', direction: dirFromEncadrants, service: svc, fonction: rawFonction };
               }
-              return { role: 'directeur', direction: dirFromEncadrants, service: svc };
+              return { role: 'directeur', direction: dirFromEncadrants, service: svc, fonction: rawFonction };
             }
           }
         }
@@ -53,13 +53,13 @@ async function getUserOrg(req) {
           for (const d of org) {
             const dirName = d.direction || d.name || d.label || d.direction_nom || d.direction_label || d.nom_direction || '';
             if (matchName(d.responsable, user, dn)) {
-              return { role: 'directeur', direction: dirFromEncadrants || dirName, service: null };
+              return { role: 'directeur', direction: dirFromEncadrants || dirName, service: null, fonction: 'directeur' };
             }
             for (const s of (d.services || [])) {
               const resp = typeof s === 'string' ? '' : (s.responsable || '');
               const svcName = typeof s === 'string' ? s : (s.label || s.code || s.nom_service || '');
               if (matchName(resp, user, dn)) {
-                return { role: 'responsable_service', direction: dirFromEncadrants || dirName, service: svcName };
+                return { role: 'responsable_service', direction: dirFromEncadrants || dirName, service: svcName, fonction: 'responsable_service' };
               }
             }
           }
@@ -67,7 +67,7 @@ async function getUserOrg(req) {
       }
     } catch { /* ignore */ }
   }
-  return { role: 'agent', direction: null, service: null };
+  return { role: 'agent', direction: null, service: null, fonction: null };
 }
 
 async function listSoumissions(req, res) {
@@ -242,9 +242,16 @@ async function updateCommentaire(req, res) {
   res.json(row);
 }
 
+function isDGADGA(fonction) {
+  if (!fonction) return false;
+  const dgKeywords = ['dga', 'directeur.adjoint', 'directeur.general', 'directeur.général', 'dg', 'directeur.adjoint'];
+  return dgKeywords.some((k) => fonction.replace(/[\s_-]+/g, '.').includes(k));
+}
+
 async function recapitulatif(req, res) {
   const org = await getUserOrg(req);
-  if (!['admin', 'service_formation', 'directeur'].includes(org.role)) {
+  const allowed = org.role === 'admin' || org.role === 'service_formation' || (org.role === 'directeur' && isDGADGA(org.fonction));
+  if (!allowed) {
     return res.status(403).json({ error: 'Accès réservé aux administrateurs, DGA et service formation' });
   }
   const rows = await repo.findAll();

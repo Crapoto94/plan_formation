@@ -30,7 +30,7 @@ async function login(req, res) {
 }
 
 async function me(req, res) {
-  const info = { user: req.user, org: { role: req.user.role === 'admin' ? 'admin' : 'agent', direction: null, service: null } };
+  const info = { user: req.user, org: { role: req.user.role === 'admin' ? 'admin' : 'agent', direction: null, service: null, fonction: null } };
 
   if (info.org.role === 'admin') { res.json(info); return; }
 
@@ -39,6 +39,7 @@ async function me(req, res) {
     info.org.role = 'service_formation';
     info.org.direction = null;
     info.org.service = null;
+    info.org.fonction = null;
     res.json(info);
     return;
   }
@@ -52,8 +53,9 @@ async function me(req, res) {
         if (Array.isArray(list)) {
           for (const e of list) {
             if ((e.email || '').toLowerCase() === email) {
-              const role = (e.role || e.fonction || e.type || '').toLowerCase();
-              info.org.role = (role === 'responsable_service' || role === 'responsable') ? 'responsable_service' : 'directeur';
+              const rawFonction = (e.role || e.fonction || e.type || '').toLowerCase();
+              info.org.role = (rawFonction === 'responsable_service' || rawFonction === 'responsable') ? 'responsable_service' : 'directeur';
+              info.org.fonction = rawFonction;
               info.org.direction = e.direction || e.direction_nom || e.direction_label || e.direction_name || e.nom_direction || '';
               info.org.service = e.service || e.service_nom || e.service_label || e.nom_service || null;
               break;
@@ -78,6 +80,7 @@ async function me(req, res) {
             if (matchName(d.responsable, user, dn)) {
               info.org.role = 'directeur';
               info.org.direction = info.org.direction || dirName;
+              info.org.fonction = info.org.fonction || 'directeur';
               break;
             }
             for (const s of (d.services || [])) {
@@ -87,6 +90,7 @@ async function me(req, res) {
                 info.org.role = 'responsable_service';
                 info.org.direction = info.org.direction || dirName;
                 info.org.service = info.org.service || svcName;
+                info.org.fonction = info.org.fonction || 'responsable_service';
                 break;
               }
             }

@@ -60,13 +60,22 @@ export default function Recapitulatif() {
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  function isDGADGA(fonction: string | null) {
+    if (!fonction) return false;
+    const kw = ['dga', 'directeur.adjoint', 'directeur.general', 'directeur.général', 'dg', 'directeur.adjoint'];
+    return kw.some((k) => fonction.replace(/[\s_-]+/g, '.').includes(k));
+  }
+
   useEffect(() => {
     (async () => {
       try {
         const { data: me } = await api.get('/api/v1/auth/me');
         const role = me.org?.role || '';
+        const fonction = me.org?.fonction || null;
         setOrgRole(role);
-        if (!['admin', 'directeur', 'service_formation'].includes(role)) {
+        localStorage.setItem('org_role', role);
+        if (fonction) localStorage.setItem('org_fonction', fonction);
+        if (role !== 'admin' && role !== 'service_formation' && !(role === 'directeur' && isDGADGA(fonction))) {
           setError('Accès réservé aux administrateurs, DGA et service formation.');
           setLoading(false);
           return;

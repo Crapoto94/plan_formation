@@ -10,26 +10,35 @@ const links = [
   { path: '/param', label: 'Paramétrage', icon: Settings },
 ];
 
+function isDGADGA(fonction: string | null) {
+  if (!fonction) return false;
+  const kw = ['dga', 'directeur.adjoint', 'directeur.general', 'directeur.général', 'dg', 'directeur.adjoint'];
+  return kw.some((k) => fonction.replace(/[\s_-]+/g, '.').includes(k));
+}
+
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const role = localStorage.getItem('role');
   const displayName = localStorage.getItem('displayName') || '';
   const [orgRole, setOrgRole] = useState<string | null>(null);
+  const [orgFonction, setOrgFonction] = useState<string | null>(null);
 
   useEffect(() => {
     api.get('/api/v1/auth/me').then((r) => {
-      const o = r.data?.org?.role;
-      if (o) { setOrgRole(o); localStorage.setItem('org_role', o); }
+      const o = r.data?.org;
+      if (o?.role) { setOrgRole(o.role); localStorage.setItem('org_role', o.role); }
+      if (o?.fonction) { setOrgFonction(o.fonction); localStorage.setItem('org_fonction', o.fonction); }
     }).catch(() => { /* ignore */ });
   }, []);
 
   const effectiveRole = orgRole || localStorage.getItem('org_role') || role;
+  const effectiveFonction = orgFonction || localStorage.getItem('org_fonction') || null;
 
   function canShow(path: string) {
     if (path === '/param') return role === 'admin';
     if (path === '/traitement') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation';
-    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation';
+    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || isDGADGA(effectiveFonction);
     return true;
   }
 
@@ -37,6 +46,7 @@ export default function Navbar() {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('org_role');
+    localStorage.removeItem('org_fonction');
     localStorage.removeItem('displayName');
     navigate('/login');
   }

@@ -66,6 +66,7 @@ export default function Traitement() {
         const o = data.org || { role: 'agent', direction: null, service: null };
         setOrg(o);
         localStorage.setItem('org_role', o.role);
+        if (o.fonction) localStorage.setItem('org_fonction', o.fonction);
         const { data: reqs } = await api.get('/api/v1/traitement/soumissions');
         setSoumissions(reqs || []);
       } catch {
