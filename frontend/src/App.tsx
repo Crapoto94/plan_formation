@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import Collecte from './pages/Collecte';
 import AdminFormations from './pages/AdminFormations';
@@ -18,10 +18,12 @@ function ProtectedRoute({ children, adminOnly }: { children: React.ReactNode; ad
 
 export default function App() {
   const token = localStorage.getItem('token');
+  const location = useLocation();
+  const showNav = token && location.pathname !== '/login';
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {token && <Navbar />}
+      {showNav && <Navbar />}
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/collecte" element={<ProtectedRoute><Collecte /></ProtectedRoute>} />
