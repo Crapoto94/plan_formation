@@ -28,6 +28,35 @@ async function createSoumission({ agent_name, agent_email, service, direction, d
   return soumission;
 }
 
+function findById(id) {
+  return db.get(
+    `SELECT s.*, json_agg(json_build_object(
+       'id', sd.id,
+       'formation_id', sd.formation_id,
+       'axe_id', sd.axe_id,
+       'motivation', sd.motivation,
+       'nb_agents', sd.nb_agents,
+       'formation_libelle', f.libelle,
+       'axe_libelle', a.libelle,
+       'type', sd.type,
+       'intitule', sd.intitule,
+       'objectif', sd.objectif,
+       'date_souhaitee', sd.date_souhaitee,
+       'organisme', sd.organisme,
+       'organisme_nom', sd.organisme_nom,
+       'justification', sd.justification,
+       'estimation_budget', sd.estimation_budget
+     )) as details
+     FROM formation.soumissions s
+     LEFT JOIN formation.soumission_details sd ON sd.soumission_id = s.id
+     LEFT JOIN formation.formations_reglementaires f ON f.id = sd.formation_id
+     LEFT JOIN formation.axes a ON a.id = sd.axe_id
+     WHERE s.id = $1
+     GROUP BY s.id`,
+    [id]
+  );
+}
+
 function findByAgent(agentName) {
   return db.all(
     `SELECT s.*, json_agg(json_build_object(
@@ -61,4 +90,4 @@ function findByAgent(agentName) {
   );
 }
 
-module.exports = { createSoumission, findByAgent };
+module.exports = { createSoumission, findById, findByAgent };
