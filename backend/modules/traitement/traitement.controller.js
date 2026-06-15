@@ -114,27 +114,54 @@ async function canValidate(req) {
   return false;
 }
 
+function formatDateSouhaitee(raw) {
+  if (!raw) return null;
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) return parsed.join(', ');
+  } catch { /* not JSON */ }
+  return String(raw);
+}
+
 async function sendNotification(agentEmail, agentName, details, statut, motif) {
   try {
-    const lines = details.map((d) => {
-      const f = d.type === 'autre' ? (d.intitule || 'Formation autre') : (d.formation_libelle || 'Formation');
-      const axe = d.axe_libelle ? `${d.axe_libelle}${d.axe_description ? ' — ' + d.axe_description : ''}` : '';
-      return `${f}${axe ? ' (' + axe + ')' : ''} — ${d.nb_agents} agent(s)`;
-    });
     const action = statut === 'valide' ? 'validée' : 'refusée';
+    const lines = details.filter(Boolean).map((d, i) => {
+      const num = `${i + 1}.`;
+      if (d.type === 'autre') {
+        return [
+          `${num} ${d.intitule || 'Formation'}`,
+          d.objectif ? `   Objectif : ${d.objectif}` : null,
+          d.organisme_nom ? `   Organisme : ${d.organisme_nom}` : null,
+          formatDateSouhaitee(d.date_souhaitee) ? `   Date souhaitée : ${formatDateSouhaitee(d.date_souhaitee)}` : null,
+          d.estimation_budget ? `   Budget estimé : ${d.estimation_budget}` : null,
+          `   Nombre d'agents : ${d.nb_agents || 1}`,
+        ].filter(Boolean).join('\n');
+      } else {
+        const axe = d.axe_libelle ? `${d.axe_libelle}${d.axe_description ? ' — ' + d.axe_description : ''}` : null;
+        return [
+          `${num} ${d.formation_libelle || 'Formation réglementaire'}`,
+          axe ? `   Axe : ${axe}` : null,
+          `   Nombre d'agents : ${d.nb_agents || 1}`,
+          d.motivation ? `   Motivation : ${d.motivation}` : null,
+        ].filter(Boolean).join('\n');
+      }
+    });
+
     const subject = `Demande de formation ${action}`;
     const content = [
       `Bonjour ${agentName},`,
       ``,
       `Votre demande de formation a été ${action}.`,
-      motif ? `Motif : ${motif}` : '',
+      motif ? `Motif : ${motif}` : null,
       ``,
-      `Récapitulatif :`,
-      ...lines.map((l) => `- ${l}`),
+      `Formations concernées :`,
+      ``,
+      ...lines,
       ``,
       `Cordialement,`,
       `Service Formation`,
-    ].filter(Boolean).join('\n');
+    ].filter((l) => l !== null).join('\n');
     await apm.envoyerMail(agentEmail, subject, content);
   } catch { /* email failure is non-blocking */ }
 }
@@ -159,7 +186,8 @@ async function valider(req, res) {
     if (soumissionIds.length > 0) {
       const soumission = await repo.findById(soumissionIds[0]);
       if (soumission?.agent_email) {
-        const details = rows.filter((r) => r.soumission_id === soumissionIds[0]);
+        const updatedIds = new Set(rows.map((r) => r.id));
+        const details = (soumission.details || []).filter((d) => d && updatedIds.has(d.id));
         sendNotification(soumission.agent_email, soumission.agent_name, details, 'valide', null);
       }
     }
@@ -191,7 +219,8 @@ async function refuser(req, res) {
     if (soumissionIds.length > 0) {
       const soumission = await repo.findById(soumissionIds[0]);
       if (soumission?.agent_email) {
-        const details = rows.filter((r) => r.soumission_id === soumissionIds[0]);
+        const updatedIds = new Set(rows.map((r) => r.id));
+        const details = (soumission.details || []).filter((d) => d && updatedIds.has(d.id));
         sendNotification(soumission.agent_email, soumission.agent_name, details, 'refuse', motif);
       }
     }
