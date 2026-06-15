@@ -112,12 +112,12 @@ export default function Recapitulatif() {
   }
 
   if (loading) {
-    return <div className="max-w-5xl mx-auto p-6 text-gray-500 text-sm">Chargement...</div>;
+    return <div className="w-full px-4 py-4 text-gray-500 text-sm">Chargement...</div>;
   }
 
   if (error) {
     return (
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="w-full px-4 py-4">
         <div className="flex items-center gap-2 mb-6">
           <BarChart3 className="w-6 h-6 text-green-600" />
           <h1 className="text-2xl font-bold">Récapitulatif</h1>
@@ -128,7 +128,7 @@ export default function Recapitulatif() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="w-full px-4 py-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-green-600" />
