@@ -128,45 +128,43 @@ function formatDateSouhaitee(raw) {
   return String(raw);
 }
 
+function mailRow(label, value) {
+  return value ? `<tr><td style="padding:2px 12px 2px 0;color:#666;white-space:nowrap;vertical-align:top"><strong>${label}</strong></td><td style="padding:2px 0;color:#333">${value}</td></tr>` : '';
+}
+
 async function sendNotification(agentEmail, agentName, details, statut, motif) {
   try {
     const action = statut === 'valide' ? 'validée' : 'refusée';
-    const lines = details.filter(Boolean).map((d, i) => {
-      const num = `${i + 1}.`;
-      if (d.type === 'autre') {
-        return [
-          `${num} ${d.intitule || 'Formation'}`,
-          d.objectif ? `   Objectif : ${d.objectif}` : null,
-          d.organisme === 'CNFPT' ? `   Organisme : CNFPT` : (d.organisme_nom ? `   Organisme : ${d.organisme_nom}` : null),
-          formatDateSouhaitee(d.date_souhaitee) ? `   Date souhaitée : ${formatDateSouhaitee(d.date_souhaitee)}` : null,
-          d.estimation_budget ? `   Budget estimé : ${d.estimation_budget}` : null,
-          `   Nombre d'agents : ${d.nb_agents || 1}`,
-        ].filter(Boolean).join('\n');
-      } else {
-        const axe = d.axe_libelle ? `${d.axe_libelle}${d.axe_description ? ' — ' + d.axe_description : ''}` : null;
-        return [
-          `${num} ${d.formation_libelle || 'Formation réglementaire'}`,
-          axe ? `   Axe : ${axe}` : null,
-          `   Nombre d'agents : ${d.nb_agents || 1}`,
-          d.motivation ? `   Motivation : ${d.motivation}` : null,
-        ].filter(Boolean).join('\n');
-      }
+    const accentColor = statut === 'valide' ? '#16a34a' : '#dc2626';
+
+    const items = details.filter(Boolean).map((d) => {
+      const titre = d.type === 'autre' ? (d.intitule || 'Formation') : (d.formation_libelle || 'Formation réglementaire');
+      const organisme = d.organisme === 'CNFPT' ? 'CNFPT' : (d.organisme_nom || null);
+      const axe = d.axe_libelle ? `${d.axe_libelle}${d.axe_description ? ' — ' + d.axe_description : ''}` : null;
+      const rows = [
+        d.type !== 'autre' && axe ? mailRow('Axe', axe) : '',
+        d.type !== 'autre' && d.motivation ? mailRow('Motivation', d.motivation) : '',
+        d.type === 'autre' && d.objectif ? mailRow('Objectif', d.objectif) : '',
+        d.type === 'autre' && organisme ? mailRow('Organisme', organisme) : '',
+        d.type === 'autre' && formatDateSouhaitee(d.date_souhaitee) ? mailRow('Date souhaitée', formatDateSouhaitee(d.date_souhaitee)) : '',
+        d.type === 'autre' && d.estimation_budget ? mailRow('Budget estimé', d.estimation_budget) : '',
+        mailRow("Nombre d'agents", String(d.nb_agents || 1)),
+      ].join('');
+      return `<li style="margin-bottom:12px">
+        <strong style="color:#29345C">${titre}</strong>
+        ${rows ? `<table style="margin-top:4px;border-spacing:0">${rows}</table>` : ''}
+      </li>`;
     });
 
     const subject = `Demande de formation ${action}`;
-    const content = [
-      `Bonjour ${agentName},`,
-      ``,
-      `Votre demande de formation a été ${action}.`,
-      motif ? `Motif : ${motif}` : null,
-      ``,
-      `Formations concernées :`,
-      ``,
-      ...lines,
-      ``,
-      `Cordialement,`,
-      `Service Formation`,
-    ].filter((l) => l !== null).join('\n');
+    const content = `
+<p>Bonjour <strong>${agentName}</strong>,</p>
+<p>Votre demande de formation a été <strong style="color:${accentColor}">${action}</strong>.</p>
+${motif ? `<p style="background:#fff3cd;border-left:4px solid #f59e0b;padding:8px 12px;margin:12px 0"><strong>Motif :</strong> ${motif}</p>` : ''}
+<p><strong>Formations concernées :</strong></p>
+<ol style="padding-left:20px;margin:0">${items.join('')}</ol>
+<p>Cordialement,<br><strong>Service Formation</strong></p>`;
+
     await apm.envoyerMail(agentEmail, subject, content);
   } catch { /* email failure is non-blocking */ }
 }
