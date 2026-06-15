@@ -10,52 +10,43 @@ function formatDateSouhaitee(raw) {
   return String(raw);
 }
 
+function row(label, value) {
+  return value ? `<tr><td style="padding:2px 12px 2px 0;color:#666;white-space:nowrap;vertical-align:top"><strong>${label}</strong></td><td style="padding:2px 0;color:#333">${value}</td></tr>` : '';
+}
+
 async function sendConfirmation(agentEmail, agentName, soumission) {
   try {
     const details = (soumission.details || []).filter(Boolean);
-    const lines = details.map((d, i) => {
-      const num = `${i + 1}.`;
-      if (d.type === 'autre') {
-        const parts = [
-          `${num} ${d.intitule || 'Formation'}`,
-          d.objectif ? `   Objectif : ${d.objectif}` : null,
-          d.organisme === 'CNFPT' ? `   Organisme : CNFPT` : (d.organisme_nom ? `   Organisme : ${d.organisme_nom}` : null),
-          formatDateSouhaitee(d.date_souhaitee) ? `   Date souhaitée : ${formatDateSouhaitee(d.date_souhaitee)}` : null,
-          d.estimation_budget ? `   Budget estimé : ${d.estimation_budget}` : null,
-          `   Nombre d'agents : ${d.nb_agents || 1}`,
-          d.justification ? `   Justification : ${d.justification}` : null,
-        ];
-        return parts.filter(Boolean).join('\n');
-      } else {
-        const formation = d.formation_libelle || 'Formation réglementaire';
-        const axe = d.axe_libelle || null;
-        const parts = [
-          `${num} ${formation}`,
-          axe ? `   Axe : ${axe}` : null,
-          `   Nombre d'agents : ${d.nb_agents || 1}`,
-          d.motivation ? `   Motivation : ${d.motivation}` : null,
-        ];
-        return parts.filter(Boolean).join('\n');
-      }
+    const items = details.map((d) => {
+      const titre = d.type === 'autre' ? (d.intitule || 'Formation') : (d.formation_libelle || 'Formation réglementaire');
+      const organisme = d.organisme === 'CNFPT' ? 'CNFPT' : (d.organisme_nom || null);
+      const rows = [
+        d.type !== 'autre' && d.axe_libelle ? row('Axe', d.axe_libelle) : '',
+        d.type !== 'autre' && d.motivation ? row('Motivation', d.motivation) : '',
+        d.type === 'autre' && d.objectif ? row('Objectif', d.objectif) : '',
+        d.type === 'autre' && organisme ? row('Organisme', organisme) : '',
+        d.type === 'autre' && formatDateSouhaitee(d.date_souhaitee) ? row('Date souhaitée', formatDateSouhaitee(d.date_souhaitee)) : '',
+        d.type === 'autre' && d.estimation_budget ? row('Budget estimé', d.estimation_budget) : '',
+        d.type === 'autre' && d.justification ? row('Justification', d.justification) : '',
+        row("Nombre d'agents", String(d.nb_agents || 1)),
+      ].join('');
+      return `<li style="margin-bottom:12px">
+        <strong style="color:#29345C">${titre}</strong>
+        ${rows ? `<table style="margin-top:4px;border-spacing:0">${rows}</table>` : ''}
+      </li>`;
     });
 
-    const content = [
-      `Bonjour ${agentName},`,
-      ``,
-      `Votre demande de formation a bien été enregistrée.`,
-      ``,
-      `Service : ${soumission.service}`,
-      `Direction : ${soumission.direction}`,
-      ``,
-      `Formations demandées :`,
-      ``,
-      ...lines,
-      ``,
-      `Votre demande sera examinée par votre hiérarchie.`,
-      ``,
-      `Cordialement,`,
-      `Service Formation`,
-    ].join('\n');
+    const content = `
+<p>Bonjour <strong>${agentName}</strong>,</p>
+<p>Votre demande de formation a bien été enregistrée.</p>
+<table style="border-spacing:0;margin-bottom:12px">
+  ${row('Service', soumission.service)}
+  ${row('Direction', soumission.direction)}
+</table>
+<p><strong>Formations demandées :</strong></p>
+<ol style="padding-left:20px;margin:0">${items.join('')}</ol>
+<p>Votre demande sera examinée par votre hiérarchie.</p>
+<p>Cordialement,<br><strong>Service Formation</strong></p>`;
 
     await apm.envoyerMail(agentEmail, 'Confirmation de votre demande de formation', content);
   } catch { /* email failure is non-blocking */ }

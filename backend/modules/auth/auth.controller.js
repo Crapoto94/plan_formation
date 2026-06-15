@@ -8,9 +8,11 @@ function matchName(field, username, displayName) {
   const un = (username || '').toLowerCase();
   const dn = (displayName || '').toLowerCase();
   if (f === un || f === dn) return true;
-  const userParts = [...new Set([...un.split(/[. ]/), ...dn.split(/[. ]/)].filter(Boolean))];
-  const fieldParts = [...new Set(f.split(/[ ,;/]+/).filter(Boolean))];
-  return userParts.some((p) => fieldParts.includes(p));
+  const split = (s) => [...new Set(s.split(/[. \-_]+/).filter(Boolean))];
+  const userParts = [...new Set([...split(un), ...split(dn)])];
+  const fieldParts = split(f);
+  const matched = fieldParts.filter((p) => userParts.includes(p));
+  return matched.length >= Math.min(fieldParts.length, 2);
 }
 
 async function login(req, res) {

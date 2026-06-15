@@ -9,9 +9,11 @@ function matchName(field, username, displayName) {
   const un = (username || '').toLowerCase();
   const dn = (displayName || '').toLowerCase();
   if (f === un || f === dn) return true;
-  const userParts = [...new Set([...un.split(/[. ]/), ...dn.split(/[. ]/)].filter(Boolean))];
-  const fieldParts = [...new Set(f.split(/[ ,;/]+/).filter(Boolean))];
-  return userParts.some((p) => fieldParts.includes(p));
+  const split = (s) => [...new Set(s.split(/[. \-_]+/).filter(Boolean))];
+  const userParts = [...new Set([...split(un), ...split(dn)])];
+  const fieldParts = split(f);
+  const matched = fieldParts.filter((p) => userParts.includes(p));
+  return matched.length >= Math.min(fieldParts.length, 2);
 }
 
 async function getUserOrg(req) {
@@ -40,29 +42,31 @@ async function getUserOrg(req) {
       }
     } catch { /* ignore */ }
   }
-  try {
-    const data = await hubdsi.getDirectionsServices(req.token);
-    if (!data?.error) {
-      const org = Array.isArray(data) ? data : (data.directions ?? data.data ?? []);
-      if (Array.isArray(org)) {
-        const user = (req.user.username || '').toLowerCase();
-        const dn = (req.user.displayName || '').toLowerCase();
-        for (const d of org) {
-          const dirName = d.direction || d.name || d.label || d.direction_nom || d.direction_label || d.nom_direction || '';
-          if (matchName(d.responsable, user, dn)) {
-            return { role: 'directeur', direction: dirFromEncadrants || dirName, service: null };
-          }
-          for (const s of (d.services || [])) {
-            const resp = typeof s === 'string' ? '' : (s.responsable || '');
-            const svcName = typeof s === 'string' ? s : (s.label || s.code || s.nom_service || '');
-            if (matchName(resp, user, dn)) {
-              return { role: 'responsable_service', direction: dirFromEncadrants || dirName, service: svcName };
+  if (!email) {
+    try {
+      const data = await hubdsi.getDirectionsServices(req.token);
+      if (!data?.error) {
+        const org = Array.isArray(data) ? data : (data.directions ?? data.data ?? []);
+        if (Array.isArray(org)) {
+          const user = (req.user.username || '').toLowerCase();
+          const dn = (req.user.displayName || '').toLowerCase();
+          for (const d of org) {
+            const dirName = d.direction || d.name || d.label || d.direction_nom || d.direction_label || d.nom_direction || '';
+            if (matchName(d.responsable, user, dn)) {
+              return { role: 'directeur', direction: dirFromEncadrants || dirName, service: null };
+            }
+            for (const s of (d.services || [])) {
+              const resp = typeof s === 'string' ? '' : (s.responsable || '');
+              const svcName = typeof s === 'string' ? s : (s.label || s.code || s.nom_service || '');
+              if (matchName(resp, user, dn)) {
+                return { role: 'responsable_service', direction: dirFromEncadrants || dirName, service: svcName };
+              }
             }
           }
         }
       }
-    }
-  } catch { /* ignore */ }
+    } catch { /* ignore */ }
+  }
   return { role: 'agent', direction: null, service: null };
 }
 
