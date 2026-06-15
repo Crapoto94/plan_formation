@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Check, X, BookOpen, Target, Settings, Wifi, Loader, Save, Users, Search, Mail, UserPlus, UserMinus } from 'lucide-react';
 import api from '../api/axios';
-import type { Formation, Axe } from '../types';
+import type { Formation, Axe, Domaine } from '../types';
 
 function FormationsSection() {
   const [formations, setFormations] = useState<Formation[]>([]);
@@ -153,6 +153,83 @@ function AxesSection() {
             <div className="flex gap-1.5 ml-2 shrink-0">
               <button onClick={() => startEdit(a)} className="text-ivry-navy hover:text-ivry-navy-dark"><Pencil className="w-3.5 h-3.5" /></button>
               <button onClick={() => remove(a.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-3.5 h-3.5" /></button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DomainesSection() {
+  const [domaines, setDomaines] = useState<Domaine[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState({ libelle: '' });
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    const { data } = await api.get('/api/v1/admin/domaines');
+    setDomaines(data);
+  }
+
+  async function create() {
+    if (!form.libelle) return;
+    await api.post('/api/v1/admin/domaines', form);
+    setForm({ libelle: '' });
+    load();
+  }
+
+  async function update(id: number) {
+    await api.put(`/api/v1/admin/domaines/${id}`, form);
+    setEditingId(null);
+    setForm({ libelle: '' });
+    load();
+  }
+
+  async function remove(id: number) {
+    await api.delete(`/api/v1/admin/domaines/${id}`);
+    load();
+  }
+
+  function startEdit(d: Domaine) {
+    setEditingId(d.id);
+    setForm({ libelle: d.libelle });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm({ libelle: '' });
+  }
+
+  return (
+    <div className="bg-white rounded shadow-sm p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Target className="w-5 h-5 text-ivry-navy" />
+        <h2 className="text-lg font-bold">Domaines d'activité</h2>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <input type="text" placeholder="Libellé" value={form.libelle} onChange={(e) => setForm({ ...form, libelle: e.target.value })} className="flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" />
+        {editingId ? (
+          <>
+            <button onClick={() => update(editingId)} className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"><Check className="w-4 h-4" /></button>
+            <button onClick={cancelEdit} className="bg-gray-400 text-white px-3 py-2 rounded hover:bg-gray-500"><X className="w-4 h-4" /></button>
+          </>
+        ) : (
+          <button onClick={create} className="bg-ivry-navy text-white px-3 py-2 rounded hover:bg-ivry-navy-dark"><Plus className="w-4 h-4" /></button>
+        )}
+      </div>
+
+      <div className="space-y-1.5 max-h-64 overflow-y-auto">
+        {domaines.map((d) => (
+          <div key={d.id} className="border rounded p-3 flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{d.libelle}</p>
+            </div>
+            <div className="flex gap-1.5 ml-2 shrink-0">
+              <button onClick={() => startEdit(d)} className="text-ivry-navy hover:text-ivry-navy-dark"><Pencil className="w-3.5 h-3.5" /></button>
+              <button onClick={() => remove(d.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           </div>
         ))}
@@ -446,6 +523,10 @@ export default function Parametrage() {
       <div className="grid grid-cols-2 gap-6 mb-6">
         <FormationsSection />
         <AxesSection />
+      </div>
+
+      <div className="mb-6">
+        <DomainesSection />
       </div>
 
       <div className="mb-6">

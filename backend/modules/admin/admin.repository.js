@@ -54,8 +54,34 @@ function deleteAxe(id) {
   return db.run('DELETE FROM formation.axes WHERE id = $1', [id]);
 }
 
+function findAllDomaines() {
+  return db.all('SELECT * FROM formation.domaines ORDER BY libelle');
+}
+
+function createDomaine({ libelle }) {
+  return db.get(
+    'INSERT INTO formation.domaines (libelle) VALUES ($1) RETURNING *',
+    [libelle]
+  );
+}
+
+function updateDomaine(id, { libelle, active }) {
+  return db.get(
+    `UPDATE formation.domaines
+     SET libelle = COALESCE($1, libelle),
+         active = COALESCE($2, active),
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $3 RETURNING *`,
+    [libelle || null, active !== undefined ? active : null, id]
+  );
+}
+
+function deleteDomaine(id) {
+  return db.run('DELETE FROM formation.domaines WHERE id = $1', [id]);
+}
+
 function viderBase() {
   return db.run('DELETE FROM formation.soumissions');
 }
 
-module.exports = { findAllFormations, createFormation, updateFormation, deleteFormation, findAllAxes, createAxe, updateAxe, deleteAxe, viderBase };
+module.exports = { findAllFormations, createFormation, updateFormation, deleteFormation, findAllAxes, createAxe, updateAxe, deleteAxe, findAllDomaines, createDomaine, updateDomaine, deleteDomaine, viderBase };

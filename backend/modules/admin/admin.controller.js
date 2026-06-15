@@ -150,6 +150,38 @@ async function updateServiceFormation(req, res) {
   res.json({ success: true, emails });
 }
 
+async function listDomaines(req, res) {
+  const rows = await repo.findAllDomaines();
+  res.json(rows);
+}
+
+async function createDomaine(req, res) {
+  const { libelle } = req.body;
+  if (!libelle) return res.status(400).json({ error: 'Libelle requis' });
+  const row = await repo.createDomaine({ libelle });
+  res.status(201).json(row);
+}
+
+async function updateDomaine(req, res) {
+  const { id } = req.params;
+  const { libelle, active } = req.body;
+  const row = await repo.updateDomaine(id, { libelle, active });
+  if (!row) return res.status(404).json({ error: 'Domaine introuvable' });
+  res.json(row);
+}
+
+async function deleteDomaine(req, res) {
+  const { id } = req.params;
+  try {
+    const result = await repo.deleteDomaine(id);
+    if (!result.changes) return res.status(404).json({ error: 'Domaine introuvable' });
+    res.json({ success: true });
+  } catch (err) {
+    if (err.code === '23503') return res.status(409).json({ error: 'Ce domaine est utilisé dans des demandes existantes et ne peut pas être supprimé.' });
+    throw err;
+  }
+}
+
 async function viderBase(req, res) {
   try {
     await repo.viderBase();
@@ -160,4 +192,4 @@ async function viderBase(req, res) {
   }
 }
 
-module.exports = { listFormations, createFormation, updateFormation, deleteFormation, listAxes, createAxe, updateAxe, deleteAxe, getConfig, updateConfig, testApm, testHubdsi, adSearch, getServiceFormation, updateServiceFormation, viderBase };
+module.exports = { listFormations, createFormation, updateFormation, deleteFormation, listAxes, createAxe, updateAxe, deleteAxe, listDomaines, createDomaine, updateDomaine, deleteDomaine, getConfig, updateConfig, testApm, testHubdsi, adSearch, getServiceFormation, updateServiceFormation, viderBase };

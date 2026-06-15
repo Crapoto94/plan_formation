@@ -17,13 +17,21 @@ export interface Axe {
   active: boolean;
 }
 
+export interface Domaine {
+  id: number;
+  libelle: string;
+  active: boolean;
+}
+
 export interface SoumissionDetail {
   id?: number;
   formation_id: number | null;
+  domaine_id: number | null;
   axe_id: number | null;
   motivation: string;
   nb_agents: number;
   formation_libelle?: string;
+  domaine_libelle?: string;
   axe_libelle?: string;
   axe_description?: string;
   type?: 'reglementaire' | 'autre';

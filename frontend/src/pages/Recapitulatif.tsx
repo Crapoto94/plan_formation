@@ -6,6 +6,7 @@ import api from '../api/axios';
 interface Detail {
   id: number;
   formation_libelle?: string;
+  domaine_libelle?: string;
   axe_libelle?: string;
   axe_description?: string;
   nb_agents: number;
@@ -233,6 +234,7 @@ export default function Recapitulatif() {
                         <th className="px-3 py-3">Demandeur</th>
                         <th className="px-3 py-3">Service</th>
                         <th className="px-3 py-3">Formation</th>
+                        <th className="px-3 py-3">Domaine</th>
                         <th className="px-3 py-3">Axe</th>
                         <th className="px-3 py-3">Agents</th>
                         <th className="px-3 py-3">Date souhaitée</th>
@@ -251,6 +253,7 @@ export default function Recapitulatif() {
                             <td className="px-3 py-2">
                               {d.type === 'autre' ? (d.intitule || 'Formation autre') : <><Shield className="w-3.5 h-3.5 text-ivry-navy inline-block mr-1" />{d.formation_libelle || '—'}</>}
                             </td>
+                            <td className="px-3 py-2">{d.domaine_libelle || '—'}</td>
                             <td className="px-3 py-2 text-gray-500 text-xs">
                               {d.axe_libelle
                                 ? d.axe_description

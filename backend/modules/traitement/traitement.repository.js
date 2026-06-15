@@ -4,10 +4,12 @@ const BASE = `
   SELECT s.*, json_agg(json_build_object(
     'id', sd.id,
     'formation_id', sd.formation_id,
+    'domaine_id', sd.domaine_id,
     'axe_id', sd.axe_id,
     'motivation', sd.motivation,
     'nb_agents', sd.nb_agents,
     'formation_libelle', f.libelle,
+    'domaine_libelle', d.libelle,
     'axe_libelle', a.libelle,
     'axe_description', a.description,
     'type', sd.type,
@@ -24,6 +26,7 @@ const BASE = `
   FROM formation.soumissions s
   LEFT JOIN formation.soumission_details sd ON sd.soumission_id = s.id
   LEFT JOIN formation.formations_reglementaires f ON f.id = sd.formation_id
+  LEFT JOIN formation.domaines d ON d.id = sd.domaine_id
   LEFT JOIN formation.axes a ON a.id = sd.axe_id
 `;
 

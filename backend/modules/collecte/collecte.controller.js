@@ -21,6 +21,7 @@ async function sendConfirmation(agentEmail, agentName, soumission) {
       const titre = d.type === 'autre' ? (d.intitule || 'Formation') : (d.formation_libelle || 'Formation réglementaire');
       const organisme = d.organisme === 'CNFPT' ? 'CNFPT' : (d.organisme_nom || null);
       const rows = [
+        d.domaine_libelle ? row('Domaine', d.domaine_libelle) : '',
         d.type !== 'autre' && d.axe_libelle ? row('Axe', d.axe_libelle) : '',
         d.type !== 'autre' && d.motivation ? row('Motivation', d.motivation) : '',
         d.type === 'autre' && d.objectif ? row('Objectif', d.objectif) : '',

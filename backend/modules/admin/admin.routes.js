@@ -9,6 +9,7 @@ router.use(authenticate);
 // GET en lecture seule — accessible à tout utilisateur authentifié
 router.get('/formations', controller.listFormations);
 router.get('/axes', controller.listAxes);
+router.get('/domaines', controller.listDomaines);
 
 // Routes d'écriture — admin uniquement
 router.post('/formations', requireAdmin, controller.createFormation);
@@ -17,6 +18,9 @@ router.delete('/formations/:id', requireAdmin, controller.deleteFormation);
 router.post('/axes', requireAdmin, controller.createAxe);
 router.put('/axes/:id', requireAdmin, controller.updateAxe);
 router.delete('/axes/:id', requireAdmin, controller.deleteAxe);
+router.post('/domaines', requireAdmin, controller.createDomaine);
+router.put('/domaines/:id', requireAdmin, controller.updateDomaine);
+router.delete('/domaines/:id', requireAdmin, controller.deleteDomaine);
 
 router.get('/config', requireAdmin, controller.getConfig);
 router.put('/config', requireAdmin, controller.updateConfig);

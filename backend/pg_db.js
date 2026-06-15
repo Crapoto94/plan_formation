@@ -36,6 +36,16 @@ async function setupDb() {
     `);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS formation.domaines (
+        id          SERIAL PRIMARY KEY,
+        libelle     VARCHAR(255) NOT NULL,
+        active      BOOLEAN DEFAULT true,
+        created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS formation.soumissions (
         id            SERIAL PRIMARY KEY,
         agent_name    VARCHAR(255) NOT NULL,
@@ -58,6 +68,7 @@ async function setupDb() {
         id              SERIAL PRIMARY KEY,
         soumission_id   INTEGER NOT NULL REFERENCES formation.soumissions(id) ON DELETE CASCADE,
         formation_id    INTEGER REFERENCES formation.formations_reglementaires(id),
+        domaine_id      INTEGER REFERENCES formation.domaines(id),
         axe_id          INTEGER REFERENCES formation.axes(id),
         motivation      TEXT,
         nb_agents       INTEGER NOT NULL DEFAULT 1,
@@ -82,6 +93,7 @@ async function setupDb() {
     await client.query(`ALTER TABLE formation.soumission_details ADD COLUMN IF NOT EXISTS estimation_budget TEXT;`);
     await client.query(`ALTER TABLE formation.soumission_details ADD COLUMN IF NOT EXISTS statut VARCHAR(50) DEFAULT 'en_attente';`);
     await client.query(`ALTER TABLE formation.soumission_details ADD COLUMN IF NOT EXISTS motif_refus TEXT;`);
+    await client.query(`ALTER TABLE formation.soumission_details ADD COLUMN IF NOT EXISTS domaine_id INTEGER REFERENCES formation.domaines(id);`);
     await client.query(`ALTER TABLE formation.soumission_details ALTER COLUMN formation_id DROP NOT NULL;`);
 
     console.log('[DB] Schéma formation initialisé');

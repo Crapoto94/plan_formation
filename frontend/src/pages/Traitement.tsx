@@ -24,6 +24,7 @@ interface DetailRow {
   motif_refus: string | null;
   commentaire: string | null;
   formation_libelle: string;
+  domaine_libelle: string | null;
   axe_libelle: string | null;
   axe_description: string | null;
   nb_agents: number;
@@ -171,6 +172,7 @@ export default function Traitement() {
           motif_refus: s.motif_refus,
           commentaire: s.commentaire,
           formation_libelle: '',
+          domaine_libelle: null,
           axe_libelle: null,
           axe_description: null,
           nb_agents: 0,
@@ -186,11 +188,12 @@ export default function Traitement() {
         statut: (d.statut as 'en_attente' | 'valide' | 'refuse') ?? s.statut,
         motif_refus: d.motif_refus ?? s.motif_refus,
         commentaire: s.commentaire,
-        formation_libelle: d.type === 'autre' ? (d.intitule || 'Formation autre') : (d.formation_libelle || ''),
-        axe_libelle: d.axe_libelle || null,
-        axe_description: d.axe_description || null,
-        nb_agents: d.nb_agents,
-      }));
+          formation_libelle: d.type === 'autre' ? (d.intitule || 'Formation autre') : (d.formation_libelle || ''),
+          domaine_libelle: d.domaine_libelle || null,
+          axe_libelle: d.axe_libelle || null,
+          axe_description: d.axe_description || null,
+          nb_agents: d.nb_agents,
+        }));
     });
   }, [soumissions]);
 
@@ -291,6 +294,7 @@ export default function Traitement() {
                 Date {sortIcon('created_at')}
               </th>
               <th className="px-3 py-3">Formation</th>
+              <th className="px-3 py-3">Domaine</th>
               <th className="px-3 py-3">Axe</th>
               <th className="px-3 py-3">Agents</th>
               <th className="px-3 py-3 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('service')}>
@@ -316,6 +320,7 @@ export default function Traitement() {
                 <td className="px-3 py-2 font-medium">{r.agent_name}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
                 <td className="px-3 py-2">{r.formation_libelle || '—'}</td>
+                <td className="px-3 py-2">{r.domaine_libelle || '—'}</td>
                 <td className="px-3 py-2 text-gray-500">
                   {r.axe_libelle
                     ? r.axe_description

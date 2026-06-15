@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, LogOut, ClipboardList, BookOpen, GraduationCap, List, FileEdit } from 'lucide-react';
 import api from '../api/axios';
-import type { Formation, Axe, Soumission } from '../types';
+import type { Formation, Axe, Domaine, Soumission } from '../types';
 
 interface DirectionService {
   direction?: string;
@@ -22,6 +22,7 @@ const svcValue = (s: string | { code?: string; label?: string; [k: string]: any 
 interface DetailRowReg {
   type: 'reglementaire';
   formation_id: number;
+  domaine_id: number;
   axe_id: number;
   motivation: string;
   nb_agents: number;
@@ -30,6 +31,7 @@ interface DetailRowReg {
 
 interface DetailRowAutre {
   type: 'autre';
+  domaine_id: number;
   axe_id: number;
   nb_agents: number;
   intitule: string;
@@ -46,11 +48,11 @@ type DetailRow = DetailRowReg | DetailRowAutre;
 const YEARS = [2027, 2028, 2029];
 
 function emptyReg(): DetailRowReg {
-  return { type: 'reglementaire', formation_id: 0, axe_id: 0, motivation: '', nb_agents: 1, date_souhaitee: [] };
+  return { type: 'reglementaire', formation_id: 0, domaine_id: 0, axe_id: 0, motivation: '', nb_agents: 1, date_souhaitee: [] };
 }
 
 function emptyAutre(): DetailRowAutre {
-  return { type: 'autre', axe_id: 0, nb_agents: 1, intitule: '', objectif: '', date_souhaitee: [], organisme: 'CNFPT', organisme_nom: '', justification: '', estimation_budget: '' };
+  return { type: 'autre', domaine_id: 0, axe_id: 0, nb_agents: 1, intitule: '', objectif: '', date_souhaitee: [], organisme: 'CNFPT', organisme_nom: '', justification: '', estimation_budget: '' };
 }
 
 function badge(s: string) {
@@ -64,6 +66,7 @@ export default function Collecte() {
   const navigate = useNavigate();
   const [formations, setFormations] = useState<Formation[]>([]);
   const [axes, setAxes] = useState<Axe[]>([]);
+  const [domaines, setDomaines] = useState<Domaine[]>([]);
   const [service, setService] = useState('');
   const [direction, setDirection] = useState('');
   const [detail, setDetail] = useState<DetailRow>(emptyReg());
@@ -81,6 +84,7 @@ export default function Collecte() {
   useEffect(() => {
     api.get('/api/v1/admin/formations').then(({ data }) => setFormations(data.filter((f: Formation) => f.active)));
     api.get('/api/v1/admin/axes').then(({ data }) => setAxes(data.filter((a: Axe) => a.active)));
+    api.get('/api/v1/admin/domaines').then(({ data }) => setDomaines(data.filter((d: Domaine) => d.active)));
     api.get('/api/v1/referentiel/directions-services').then(({ data }) => {
       const list = Array.isArray(data) ? data
         : data.directions ?? data.data ?? data.items ?? data.results ?? data.organisations ?? [];
@@ -138,26 +142,28 @@ export default function Collecte() {
     return mesSoumissions.flatMap((s) => {
       const details = s.details?.length ? s.details : [];
       if (!details.length) {
-        return [{
-          key: `${s.id}-0`,
-          created_at: s.created_at,
-          formation_libelle: '',
-          axe_libelle: null as string | null,
-          axe_description: null as string | null,
-          nb_agents: 0,
-          statut: s.statut,
-          motif_refus: s.motif_refus,
-          type: '' as string | undefined,
-          organisme: '' as string | undefined,
-          organisme_nom: '' as string | undefined,
-          date_souhaitee: '' as string | undefined,
-          estimation_budget: '' as string | undefined,
-        }];
+          return [{
+            key: `${s.id}-0`,
+            created_at: s.created_at,
+            formation_libelle: '',
+            domaine_libelle: null as string | null,
+            axe_libelle: null as string | null,
+            axe_description: null as string | null,
+            nb_agents: 0,
+            statut: s.statut,
+            motif_refus: s.motif_refus,
+            type: '' as string | undefined,
+            organisme: '' as string | undefined,
+            organisme_nom: '' as string | undefined,
+            date_souhaitee: '' as string | undefined,
+            estimation_budget: '' as string | undefined,
+          }];
       }
       return details.map((d) => ({
         key: `${s.id}-${d.id}`,
         created_at: s.created_at,
         formation_libelle: d.type === 'autre' ? (d.intitule || 'Formation autre') : (d.formation_libelle || ''),
+        domaine_libelle: d.domaine_libelle || null,
         axe_libelle: d.axe_libelle || null,
         axe_description: d.axe_description || null,
         nb_agents: d.nb_agents,
@@ -200,6 +206,7 @@ export default function Collecte() {
               <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <th className="px-3 py-3">Date</th>
                 <th className="px-3 py-3">Formation</th>
+                <th className="px-3 py-3">Domaine</th>
                 <th className="px-3 py-3">Axe</th>
                 <th className="px-3 py-3">Agents</th>
                 <th className="px-3 py-3">Date souhaitée</th>
@@ -213,6 +220,7 @@ export default function Collecte() {
                 <tr key={r.key} className={`hover:bg-gray-50 ${r.statut !== 'en_attente' ? 'text-gray-400' : ''}`}>
                   <td className="px-3 py-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
                   <td className="px-3 py-2">{r.formation_libelle || '—'}</td>
+                  <td className="px-3 py-2">{r.domaine_libelle || '—'}</td>
                   <td className="px-3 py-2 text-gray-500">
                     {r.axe_libelle
                       ? r.axe_description
@@ -350,6 +358,13 @@ export default function Collecte() {
                 </div>
               </div>
               <div>
+                <label className="form-label">Domaine d'activité</label>
+                <select value={detail.domaine_id} onChange={(e) => updateDetail('domaine_id', Number(e.target.value))} className="form-input">
+                  <option value={0}>Sélectionner...</option>
+                  {domaines.map((d) => <option key={d.id} value={d.id}>{d.libelle}</option>)}
+                </select>
+              </div>
+              <div>
                 <label className="form-label">Motivation</label>
                 <textarea value={detail.motivation} onChange={(e) => updateDetail('motivation', e.target.value)} className="form-input" rows={2} />
               </div>
@@ -388,6 +403,13 @@ export default function Collecte() {
                   {axes.map((a) => <option key={a.id} value={a.id}>{axeLabel(a)}</option>)}
                 </select>
                 {(() => { const a = axes.find(x => x.id === Number(detail.axe_id)); return a ? <p className="text-xs text-gray-500 mt-1 italic">{a.libelle}{a.description ? ` — ${a.description}` : ''}</p> : null; })()}
+              </div>
+              <div>
+                <label className="form-label">Domaine d'activité</label>
+                <select value={detail.domaine_id} onChange={(e) => updateDetail('domaine_id', Number(e.target.value))} className="form-input">
+                  <option value={0}>Sélectionner...</option>
+                  {domaines.map((d) => <option key={d.id} value={d.id}>{d.libelle}</option>)}
+                </select>
               </div>
               <div>
                 <label className="form-label">Date de mise en œuvre souhaitée</label>
