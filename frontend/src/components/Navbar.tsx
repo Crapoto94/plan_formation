@@ -10,12 +10,6 @@ const links = [
   { path: '/param', label: 'Paramétrage', icon: Settings },
 ];
 
-function isDGADGA(fonction: string | null) {
-  if (!fonction) return false;
-  const kw = ['dga', 'directeur.adjoint', 'directeur.general', 'directeur.général', 'dg', 'directeur.adjoint'];
-  return kw.some((k) => fonction.replace(/[\s_-]+/g, '.').includes(k));
-}
-
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,7 +32,7 @@ export default function Navbar() {
   function canShow(path: string) {
     if (path === '/param') return role === 'admin';
     if (path === '/traitement') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation';
-    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || isDGADGA(effectiveFonction);
+    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || effectiveRole === 'directeur';
     return true;
   }
 
