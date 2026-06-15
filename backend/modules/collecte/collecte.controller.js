@@ -25,9 +25,9 @@ async function sendConfirmation(agentEmail, agentName, soumission) {
         d.type !== 'autre' && d.motivation ? row('Motivation', d.motivation) : '',
         d.type === 'autre' && d.objectif ? row('Objectif', d.objectif) : '',
         d.type === 'autre' && organisme ? row('Organisme', organisme) : '',
-        d.type === 'autre' && formatDateSouhaitee(d.date_souhaitee) ? row('Date souhaitée', formatDateSouhaitee(d.date_souhaitee)) : '',
         d.type === 'autre' && d.estimation_budget ? row('Budget estimé', d.estimation_budget) : '',
         d.type === 'autre' && d.justification ? row('Justification', d.justification) : '',
+        formatDateSouhaitee(d.date_souhaitee) ? row('Date souhaitée', formatDateSouhaitee(d.date_souhaitee)) : '',
         row("Nombre d'agents", String(d.nb_agents || 1)),
       ].join('');
       return `<li style="margin-bottom:12px">

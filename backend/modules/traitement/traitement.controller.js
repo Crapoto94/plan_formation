@@ -163,8 +163,8 @@ async function sendNotification(agentEmail, agentName, details, statut, motif) {
         d.type !== 'autre' && d.motivation ? mailRow('Motivation', d.motivation) : '',
         d.type === 'autre' && d.objectif ? mailRow('Objectif', d.objectif) : '',
         d.type === 'autre' && organisme ? mailRow('Organisme', organisme) : '',
-        d.type === 'autre' && formatDateSouhaitee(d.date_souhaitee) ? mailRow('Date souhaitée', formatDateSouhaitee(d.date_souhaitee)) : '',
         d.type === 'autre' && d.estimation_budget ? mailRow('Budget estimé', d.estimation_budget) : '',
+        formatDateSouhaitee(d.date_souhaitee) ? mailRow('Date souhaitée', formatDateSouhaitee(d.date_souhaitee)) : '',
         mailRow("Nombre d'agents", String(d.nb_agents || 1)),
       ].join('');
       return `<li style="margin-bottom:12px">

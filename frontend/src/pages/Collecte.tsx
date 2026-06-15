@@ -25,6 +25,7 @@ interface DetailRowReg {
   axe_id: number;
   motivation: string;
   nb_agents: number;
+  date_souhaitee: number[];
 }
 
 interface DetailRowAutre {
@@ -45,7 +46,7 @@ type DetailRow = DetailRowReg | DetailRowAutre;
 const YEARS = [2027, 2028, 2029];
 
 function emptyReg(): DetailRowReg {
-  return { type: 'reglementaire', formation_id: 0, axe_id: 0, motivation: '', nb_agents: 1 };
+  return { type: 'reglementaire', formation_id: 0, axe_id: 0, motivation: '', nb_agents: 1, date_souhaitee: [] };
 }
 
 function emptyAutre(): DetailRowAutre {
@@ -97,7 +98,6 @@ export default function Collecte() {
   }
 
   function toggleYear(year: number) {
-    if (detail.type !== 'autre') return;
     const current = detail.date_souhaitee;
     const next = current.includes(year) ? current.filter((y) => y !== year) : [...current, year];
     updateDetail('date_souhaitee', next);
@@ -352,6 +352,17 @@ export default function Collecte() {
               <div>
                 <label className="form-label">Motivation</label>
                 <textarea value={detail.motivation} onChange={(e) => updateDetail('motivation', e.target.value)} className="form-input" rows={2} />
+              </div>
+              <div>
+                <label className="form-label">Date de mise en œuvre souhaitée</label>
+                <div className="flex gap-3">
+                  {YEARS.map((y) => (
+                    <label key={y} className="flex items-center gap-2 text-base cursor-pointer">
+                      <input type="checkbox" checked={(detail as DetailRowReg).date_souhaitee.includes(y)} onChange={() => toggleYear(y)} className="accent-[#EC4B52]" />
+                      {y}
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="w-24">
                 <label className="form-label">Nombre d'agents</label>

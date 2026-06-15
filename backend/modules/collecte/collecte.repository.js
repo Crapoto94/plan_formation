@@ -10,10 +10,11 @@ async function createSoumission({ agent_name, agent_email, service, direction, d
   for (const d of details) {
     const type = d.type || 'reglementaire';
     if (type === 'reglementaire') {
+      const dateSouhaitee = Array.isArray(d.date_souhaitee) ? JSON.stringify(d.date_souhaitee) : (d.date_souhaitee || null);
       await db.run(
-        `INSERT INTO formation.soumission_details (soumission_id, formation_id, axe_id, motivation, nb_agents, type)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [soumission.id, d.formation_id, d.axe_id || null, d.motivation || null, d.nb_agents || 1, type]
+        `INSERT INTO formation.soumission_details (soumission_id, formation_id, axe_id, motivation, nb_agents, type, date_souhaitee)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [soumission.id, d.formation_id, d.axe_id || null, d.motivation || null, d.nb_agents || 1, type, dateSouhaitee]
       );
     } else {
       const dateSouhaitee = Array.isArray(d.date_souhaitee) ? JSON.stringify(d.date_souhaitee) : (d.date_souhaitee || null);
