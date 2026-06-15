@@ -147,6 +147,9 @@ export default function Collecte() {
           nb_agents: 0,
           statut: s.statut,
           motif_refus: s.motif_refus,
+          type: '' as string | undefined,
+          organisme: '' as string | undefined,
+          estimation_budget: '' as string | undefined,
         }];
       }
       return details.map((d) => ({
@@ -158,9 +161,71 @@ export default function Collecte() {
         nb_agents: d.nb_agents,
         statut: (d.statut as 'en_attente' | 'valide' | 'refuse') ?? s.statut,
         motif_refus: d.motif_refus ?? s.motif_refus,
+        type: d.type,
+        organisme: d.organisme,
+        estimation_budget: d.estimation_budget,
       }));
     });
   }, [mesSoumissions]);
+
+  const groupedRows = useMemo(() => {
+    const reg = allRows.filter((r) => r.type === 'reglementaire');
+    const cnfpt = allRows.filter((r) => r.type === 'autre' && r.organisme === 'CNFPT');
+    const horsCnfpt = allRows.filter((r) => r.type === 'autre' && r.organisme === 'autre');
+    const totalHorsCnfpt = horsCnfpt.reduce((sum, r) => {
+      const val = parseFloat(String(r.estimation_budget || '0').replace(/[^0-9,.-]/g, '').replace(',', '.'));
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+    return { reg, cnfpt, horsCnfpt, totalHorsCnfpt };
+  }, [allRows]);
+
+  function section(title: string, rows: typeof allRows, total?: number) {
+    if (!rows.length) return null;
+    return (
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-3">
+          <h2 className="text-lg font-bold text-ivry-navy border-l-4 border-ivry-red pl-3">{title}</h2>
+          <span className="text-xs text-gray-400">({rows.length})</span>
+          {total !== undefined && (
+            <span className="text-xs font-medium text-ivry-red ml-auto">{total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
+          )}
+        </div>
+        <div className="overflow-x-auto rounded border shadow-sm">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3">Date</th>
+                <th className="px-3 py-3">Formation</th>
+                <th className="px-3 py-3">Axe</th>
+                <th className="px-3 py-3">Agents</th>
+                <th className="px-3 py-3">Statut</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {rows.map((r) => (
+                <tr key={r.key} className={`hover:bg-gray-50 ${r.statut !== 'en_attente' ? 'text-gray-400' : ''}`}>
+                  <td className="px-3 py-2 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
+                  <td className="px-3 py-2">{r.formation_libelle || '—'}</td>
+                  <td className="px-3 py-2 text-gray-500">
+                    {r.axe_libelle
+                      ? r.axe_description
+                        ? `${r.axe_libelle} — ${r.axe_description}`
+                        : r.axe_libelle
+                      : '—'}
+                  </td>
+                  <td className="px-3 py-2">{r.nb_agents}</td>
+                  <td className="px-3 py-2">
+                    {badge(r.statut)}
+                    {r.motif_refus && <p className="text-xs text-red-500 mt-1 max-w-40">{r.motif_refus}</p>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   if (view === 'list') {
     return (
