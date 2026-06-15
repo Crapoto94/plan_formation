@@ -225,9 +225,8 @@ export default function Collecte() {
                     r.date_souhaitee
                       ? (() => {
                           let raw = r.date_souhaitee!;
-                          try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) raw = parsed[0]; } catch {}
-                          const d = new Date(raw);
-                          return isNaN(d.getTime()) ? raw : d.toLocaleDateString('fr-FR');
+                          try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) return parsed.join(', '); } catch {}
+                          return raw;
                         })()
                       : '—'
                   }</td>
