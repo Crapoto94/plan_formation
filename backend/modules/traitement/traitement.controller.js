@@ -21,12 +21,13 @@ async function getUserOrg(req) {
   const email = (req.user.email || '').toLowerCase();
   if (email && config.getServiceFormation().includes(email)) return { role: 'service_formation', direction: null, service: null, fonction: null };
   let dirFromEncadrants = '';
-  if (email) {
-    try {
-      const data = await hubdsi.getEncadrants(req.token);
-      if (!data?.error) {
-        const list = Array.isArray(data) ? data : (data.encadrants ?? data.data ?? []);
-        if (Array.isArray(list)) {
+  try {
+    const data = await hubdsi.getEncadrants(req.token);
+    if (!data?.error) {
+      const list = Array.isArray(data) ? data : (data.encadrants ?? data.data ?? []);
+      if (Array.isArray(list)) {
+        // 1. Match by email
+        if (email) {
           for (const e of list) {
             if ((e.email || '').toLowerCase() === email) {
               const rawFonction = (e.role || e.fonction || e.type || '').toLowerCase();
@@ -39,9 +40,25 @@ async function getUserOrg(req) {
             }
           }
         }
+        // 2. Fallback: match by name
+        const user = (req.user.username || '').toLowerCase();
+        const dn = (req.user.displayName || '').toLowerCase();
+        for (const e of list) {
+          const nm1 = `${e.prenom || ''} ${e.nom || ''}`.trim();
+          const nm2 = `${e.nom || ''} ${e.prenom || ''}`.trim();
+          if ((nm1 && matchName(nm1, user, dn)) || (nm2 && matchName(nm2, user, dn))) {
+            const rawFonction = (e.role || e.fonction || e.type || '').toLowerCase();
+            dirFromEncadrants = e.direction || e.direction_nom || e.direction_label || e.direction_name || e.nom_direction || '';
+            const svc = e.service || e.service_nom || e.service_label || e.nom_service || null;
+            if (rawFonction === 'responsable_service' || rawFonction === 'responsable') {
+              return { role: 'responsable_service', direction: dirFromEncadrants, service: svc, fonction: rawFonction };
+            }
+            return { role: 'directeur', direction: dirFromEncadrants, service: svc, fonction: rawFonction };
+          }
+        }
       }
-    } catch { /* ignore */ }
-  }
+    }
+  } catch { /* ignore */ }
   if (!email) {
     try {
       const data = await hubdsi.getDirectionsServices(req.token);

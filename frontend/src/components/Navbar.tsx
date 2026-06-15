@@ -32,7 +32,7 @@ export default function Navbar() {
   function canShow(path: string) {
     if (path === '/param') return role === 'admin';
     if (path === '/traitement') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation';
-    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || effectiveRole === 'directeur';
+    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || effectiveFonction === 'dg';
     return true;
   }
 

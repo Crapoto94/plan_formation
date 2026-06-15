@@ -25,9 +25,14 @@ async function updateFormation(req, res) {
 
 async function deleteFormation(req, res) {
   const { id } = req.params;
-  const result = await repo.deleteFormation(id);
-  if (!result.changes) return res.status(404).json({ error: 'Formation introuvable' });
-  res.json({ success: true });
+  try {
+    const result = await repo.deleteFormation(id);
+    if (!result.changes) return res.status(404).json({ error: 'Formation introuvable' });
+    res.json({ success: true });
+  } catch (err) {
+    if (err.code === '23503') return res.status(409).json({ error: 'Cette formation est utilisée dans des demandes existantes et ne peut pas être supprimée.' });
+    throw err;
+  }
 }
 
 async function listAxes(req, res) {
@@ -52,9 +57,14 @@ async function updateAxe(req, res) {
 
 async function deleteAxe(req, res) {
   const { id } = req.params;
-  const result = await repo.deleteAxe(id);
-  if (!result.changes) return res.status(404).json({ error: 'Axe introuvable' });
-  res.json({ success: true });
+  try {
+    const result = await repo.deleteAxe(id);
+    if (!result.changes) return res.status(404).json({ error: 'Axe introuvable' });
+    res.json({ success: true });
+  } catch (err) {
+    if (err.code === '23503') return res.status(409).json({ error: 'Cet axe est utilisé dans des demandes existantes et ne peut pas être supprimé.' });
+    throw err;
+  }
 }
 
 async function getConfig(req, res) {

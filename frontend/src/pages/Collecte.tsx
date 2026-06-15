@@ -17,7 +17,7 @@ const svcLabel = (s: string | { code?: string; label?: string; [k: string]: any 
   typeof s === 'string' ? s : (s.label ?? s.code ?? JSON.stringify(s));
 
 const svcValue = (s: string | { code?: string; label?: string; [k: string]: any }) =>
-  typeof s === 'string' ? s : (s.code ?? s.label ?? JSON.stringify(s));
+  typeof s === 'string' ? s : (s.code && s.label ? `${s.code} - ${s.label}` : (s.code ?? s.label ?? JSON.stringify(s)));
 
 interface DetailRowReg {
   type: 'reglementaire';

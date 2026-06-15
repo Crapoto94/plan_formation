@@ -56,6 +56,7 @@ export default function Recapitulatif() {
   const navigate = useNavigate();
   const [data, setData] = useState<Soumission[]>([]);
   const [orgRole, setOrgRole] = useState('');
+  const [orgFonction, setOrgFonction] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -65,12 +66,13 @@ export default function Recapitulatif() {
       try {
         const { data: me } = await api.get('/api/v1/auth/me');
         const role = me.org?.role || '';
-        const fonction = me.org?.fonction || null;
+        const fonction = me.org?.fonction || '';
         setOrgRole(role);
+        setOrgFonction(fonction);
         localStorage.setItem('org_role', role);
         if (fonction) localStorage.setItem('org_fonction', fonction);
-        if (role !== 'admin' && role !== 'service_formation' && role !== 'directeur') {
-          setError('Accès réservé aux administrateurs, directeurs et service formation.');
+        if (role !== 'admin' && role !== 'service_formation' && fonction !== 'dg') {
+          setError('Accès réservé aux administrateurs, DGA et service formation.');
           setLoading(false);
           return;
         }

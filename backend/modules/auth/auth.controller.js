@@ -44,13 +44,14 @@ async function me(req, res) {
     return;
   }
 
-  if (email) {
-    try {
-      const data = await hubdsi.getEncadrants(req.token);
-      console.error('[me] encadrants:', data?.error ? JSON.stringify(data.error) : 'OK');
-      if (!data?.error) {
-        const list = Array.isArray(data) ? data : (data.encadrants ?? data.data ?? []);
-        if (Array.isArray(list)) {
+  try {
+    const data = await hubdsi.getEncadrants(req.token);
+    console.error('[me] encadrants:', data?.error ? JSON.stringify(data.error) : 'OK');
+    if (!data?.error) {
+      const list = Array.isArray(data) ? data : (data.encadrants ?? data.data ?? []);
+      if (Array.isArray(list)) {
+        // 1. Match by email
+        if (email) {
           for (const e of list) {
             if ((e.email || '').toLowerCase() === email) {
               const rawFonction = (e.role || e.fonction || e.type || '').toLowerCase();
@@ -62,11 +63,28 @@ async function me(req, res) {
             }
           }
         }
+        // 2. Fallback: match by name (handles empty email in JWT)
+        if (info.org.role === 'agent') {
+          const user = (req.user.username || '').toLowerCase();
+          const dn = (req.user.displayName || '').toLowerCase();
+          for (const e of list) {
+            const nm1 = `${e.prenom || ''} ${e.nom || ''}`.trim();
+            const nm2 = `${e.nom || ''} ${e.prenom || ''}`.trim();
+            if ((nm1 && matchName(nm1, user, dn)) || (nm2 && matchName(nm2, user, dn))) {
+              const rawFonction = (e.role || e.fonction || e.type || '').toLowerCase();
+              info.org.role = (rawFonction === 'responsable_service' || rawFonction === 'responsable') ? 'responsable_service' : 'directeur';
+              info.org.fonction = rawFonction;
+              info.org.direction = e.direction || e.direction_nom || e.direction_label || e.direction_name || e.nom_direction || '';
+              info.org.service = e.service || e.service_nom || e.service_label || e.nom_service || null;
+              break;
+            }
+          }
+        }
       }
-    } catch (e) { console.error('[me] encadrants err:', e.message); }
-  }
+    }
+  } catch (e) { console.error('[me] encadrants err:', e.message); }
 
-  if ((info.org.role === 'directeur' && !info.org.direction) || (info.org.role === 'agent' && !email)) {
+  if ((info.org.role === 'directeur' && !info.org.direction) || info.org.role === 'agent') {
     try {
       const data = await hubdsi.getDirectionsServices(req.token);
       console.error('[me] orgchart:', data?.error ? JSON.stringify(data.error) : 'OK');
