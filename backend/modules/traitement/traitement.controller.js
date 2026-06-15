@@ -143,23 +143,32 @@ async function valider(req, res) {
   if (!(await canValidate(req))) return res.status(403).json({ error: 'Réservé aux directeurs et administrateurs' });
   const { detail_ids, commentaire } = req.body;
   if (!detail_ids || !detail_ids.length) return res.status(400).json({ error: 'Aucune demande sélectionnée' });
-  const rows = await repo.batchUpdateDetailStatut(detail_ids, 'valide', null);
-  const soumissionIds = [...new Set(rows.map((r) => r.soumission_id))];
-  for (const sid of soumissionIds) {
-    const all = await repo.getDetailsBySoumission(sid);
-    if (all.every((d) => d.statut === 'valide')) {
-      await repo.updateSoumissionStatut(sid, 'valide');
+  const validIds = detail_ids.filter((id) => id && Number.isInteger(Number(id)) && Number(id) > 0);
+  if (!validIds.length) return res.status(400).json({ error: 'Aucun identifiant de formation valide' });
+  try {
+    const rows = await repo.batchUpdateDetailStatut(validIds, 'valide', null);
+    const soumissionIds = [...new Set(rows.map((r) => r.soumission_id))];
+    for (const sid of soumissionIds) {
+      const all = await repo.getDetailsBySoumission(sid);
+      if (all.every((d) => d.statut === 'valide')) {
+        await repo.updateSoumissionStatut(sid, 'valide');
+      }
     }
-  }
-  if (commentaire) for (const sid of soumissionIds) await repo.updateCommentaire(sid, commentaire);
+    if (commentaire) for (const sid of soumissionIds) await repo.updateCommentaire(sid, commentaire);
 
-  const soumission = await repo.findById(soumissionIds[0]);
-  if (soumission?.agent_email) {
-    const details = rows.filter((r) => r.soumission_id === soumissionIds[0]);
-    sendNotification(soumission.agent_email, soumission.agent_name, details, 'valide', null);
-  }
+    if (soumissionIds.length > 0) {
+      const soumission = await repo.findById(soumissionIds[0]);
+      if (soumission?.agent_email) {
+        const details = rows.filter((r) => r.soumission_id === soumissionIds[0]);
+        sendNotification(soumission.agent_email, soumission.agent_name, details, 'valide', null);
+      }
+    }
 
-  res.json({ success: true, count: rows.length });
+    res.json({ success: true, count: rows.length });
+  } catch (err) {
+    console.error('[traitement] valider error:', err.message);
+    res.status(500).json({ error: 'Erreur interne lors de la validation', detail: err.message });
+  }
 }
 
 async function refuser(req, res) {
@@ -167,22 +176,31 @@ async function refuser(req, res) {
   const { detail_ids, motif } = req.body;
   if (!detail_ids || !detail_ids.length) return res.status(400).json({ error: 'Aucune demande sélectionnée' });
   if (!motif) return res.status(400).json({ error: 'Motif de refus requis' });
-  const rows = await repo.batchUpdateDetailStatut(detail_ids, 'refuse', motif);
-  const soumissionIds = [...new Set(rows.map((r) => r.soumission_id))];
-  for (const sid of soumissionIds) {
-    const all = await repo.getDetailsBySoumission(sid);
-    if (all.every((d) => d.statut === 'refuse')) {
-      await repo.updateSoumissionStatut(sid, 'refuse');
+  const validIds = detail_ids.filter((id) => id && Number.isInteger(Number(id)) && Number(id) > 0);
+  if (!validIds.length) return res.status(400).json({ error: 'Aucun identifiant de formation valide' });
+  try {
+    const rows = await repo.batchUpdateDetailStatut(validIds, 'refuse', motif);
+    const soumissionIds = [...new Set(rows.map((r) => r.soumission_id))];
+    for (const sid of soumissionIds) {
+      const all = await repo.getDetailsBySoumission(sid);
+      if (all.every((d) => d.statut === 'refuse')) {
+        await repo.updateSoumissionStatut(sid, 'refuse');
+      }
     }
-  }
 
-  const soumission = await repo.findById(soumissionIds[0]);
-  if (soumission?.agent_email) {
-    const details = rows.filter((r) => r.soumission_id === soumissionIds[0]);
-    sendNotification(soumission.agent_email, soumission.agent_name, details, 'refuse', motif);
-  }
+    if (soumissionIds.length > 0) {
+      const soumission = await repo.findById(soumissionIds[0]);
+      if (soumission?.agent_email) {
+        const details = rows.filter((r) => r.soumission_id === soumissionIds[0]);
+        sendNotification(soumission.agent_email, soumission.agent_name, details, 'refuse', motif);
+      }
+    }
 
-  res.json({ success: true, count: rows.length });
+    res.json({ success: true, count: rows.length });
+  } catch (err) {
+    console.error('[traitement] refuser error:', err.message);
+    res.status(500).json({ error: 'Erreur interne lors du refus', detail: err.message });
+  }
 }
 
 async function updateCommentaire(req, res) {
