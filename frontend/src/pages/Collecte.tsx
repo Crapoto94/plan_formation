@@ -67,6 +67,7 @@ export default function Collecte() {
   const [direction, setDirection] = useState('');
   const [detail, setDetail] = useState<DetailRow>(emptyReg());
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const [directionsServices, setDirectionsServices] = useState<DirectionService[]>([]);
   const [loadingOrg, setLoadingOrg] = useState(true);
   const [view, setView] = useState<'form' | 'list'>('list');
@@ -104,6 +105,7 @@ export default function Collecte() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError('');
     try {
       await api.post('/api/v1/collecte/soumettre', { service, direction, details: [detail] });
       setSuccess('Demande envoyée avec succès !');
@@ -113,13 +115,16 @@ export default function Collecte() {
       const { data } = await api.get('/api/v1/collecte/mes-soumissions');
       setMesSoumissions(data || []);
       setView('list');
-    } catch {
+    } catch (err) {
       setSuccess('');
+      const e = err as any;
+      setError(e?.response?.data?.error || e?.message || 'Erreur lors de l\'envoi');
     }
   }
 
   function handleNewDemande() {
     setSuccess('');
+    setError('');
     setView('form');
   }
 
@@ -176,6 +181,7 @@ export default function Collecte() {
         </div>
 
         {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
+        {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</p>}
 
         <div className="overflow-x-auto rounded border shadow-sm">
           <table className="w-full text-sm">
@@ -231,34 +237,35 @@ export default function Collecte() {
       </div>
 
       {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
+      {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm p-8 space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Direction</label>
-            <select value={direction} onChange={(e) => { setDirection(e.target.value); setService(''); }} className="w-full border rounded px-3 py-2 focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" required disabled={loadingOrg}>
+            <label className="form-label">Direction</label>
+            <select value={direction} onChange={(e) => { setDirection(e.target.value); setService(''); }} className="form-input" required disabled={loadingOrg}>
               <option value="">Sélectionner...</option>
               {directionsServices.map((ds, i) => <option key={dsName(ds) || i} value={dsName(ds)}>{dsName(ds)}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Service</label>
-            <select value={service} onChange={(e) => setService(e.target.value)} className="w-full border rounded px-3 py-2 focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy" required disabled={loadingOrg || !direction}>
+            <label className="form-label">Service</label>
+            <select value={service} onChange={(e) => setService(e.target.value)} className="form-input" required disabled={loadingOrg || !direction}>
               <option value="">Sélectionner...</option>
               {filteredServices.map((s, i) => <option key={i} value={svcValue(s)}>{svcLabel(s)}</option>)}
             </select>
           </div>
         </div>
 
-        <h2 className="font-semibold text-lg mt-6">Besoin en formation</h2>
-        <div className="border rounded p-4 space-y-3">
+        <h2 className="form-section-title">Besoin en formation</h2>
+        <div className="border rounded p-6 space-y-5">
           <div className="flex items-center gap-1 mb-2">
             <button type="button" onClick={() => setDetail(emptyReg())}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition ${detail.type === 'reglementaire' ? 'bg-ivry-navy/10 text-ivry-navy' : 'text-gray-500 hover:bg-gray-100'}`}>
+              className={`flex items-center gap-2 px-4 py-2.5 rounded text-sm font-semibold transition ${detail.type === 'reglementaire' ? 'bg-ivry-navy/10 text-ivry-navy' : 'text-gray-500 hover:bg-gray-100'}`}>
               <BookOpen className="w-4 h-4" /> Réglementaire
             </button>
             <button type="button" onClick={() => setDetail(emptyAutre())}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition ${detail.type === 'autre' ? 'bg-ivry-red/10 text-ivry-red' : 'text-gray-500 hover:bg-gray-100'}`}>
+              className={`flex items-center gap-2 px-4 py-2.5 rounded text-sm font-semibold transition ${detail.type === 'autre' ? 'bg-ivry-red/10 text-ivry-red' : 'text-gray-500 hover:bg-gray-100'}`}>
               <GraduationCap className="w-4 h-4" /> Autre formation
             </button>
           </div>
@@ -267,15 +274,15 @@ export default function Collecte() {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium mb-1">Formation réglementaire</label>
-                  <select value={detail.formation_id} onChange={(e) => updateDetail('formation_id', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm" required>
+                  <label className="form-label">Formation réglementaire</label>
+                  <select value={detail.formation_id} onChange={(e) => updateDetail('formation_id', Number(e.target.value))} className="form-input" required>
                     <option value={0}>Sélectionner...</option>
                     {formations.map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1">Axe</label>
-                  <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm">
+                  <label className="form-label">Axe</label>
+                  <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="form-input">
                     <option value={0}>Sélectionner...</option>
                     {axes.map((a) => <option key={a.id} value={a.id}>{axeLabel(a)}</option>)}
                   </select>
@@ -283,39 +290,39 @@ export default function Collecte() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Motivation</label>
-                <textarea value={detail.motivation} onChange={(e) => updateDetail('motivation', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} />
+                <label className="form-label">Motivation</label>
+                <textarea value={detail.motivation} onChange={(e) => updateDetail('motivation', e.target.value)} className="form-input" rows={2} />
               </div>
               <div className="w-24">
-                <label className="block text-xs font-medium mb-1">Nombre d'agents</label>
-                <input type="number" min={1} value={detail.nb_agents} onChange={(e) => updateDetail('nb_agents', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm" required />
+                <label className="form-label">Nombre d'agents</label>
+                <input type="number" min={1} value={detail.nb_agents} onChange={(e) => updateDetail('nb_agents', Number(e.target.value))} className="form-input" required />
               </div>
             </>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-xs font-medium mb-1">Intitulé de la formation</label>
-                  <input type="text" value={detail.intitule} onChange={(e) => updateDetail('intitule', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Ex: Gestion du stress, Excel avancé..." />
+                  <label className="form-label">Intitulé de la formation</label>
+                  <input type="text" value={detail.intitule} onChange={(e) => updateDetail('intitule', e.target.value)} className="form-input" required placeholder="Ex: Gestion du stress, Excel avancé..." />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Objectif</label>
-                <textarea value={detail.objectif} onChange={(e) => updateDetail('objectif', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} required placeholder="Décrivez l'objectif de cette formation..." />
+                <label className="form-label">Objectif</label>
+                <textarea value={detail.objectif} onChange={(e) => updateDetail('objectif', e.target.value)} className="form-input" rows={2} required placeholder="Décrivez l'objectif de cette formation..." />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Rapprochement au projet d'administration (Axe)</label>
-                <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm">
+                <label className="form-label">Rapprochement au projet d'administration (Axe)</label>
+                <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="form-input">
                   <option value={0}>Sélectionner...</option>
                   {axes.map((a) => <option key={a.id} value={a.id}>{axeLabel(a)}</option>)}
                 </select>
                 {(() => { const a = axes.find(x => x.id === Number(detail.axe_id)); return a ? <p className="text-xs text-gray-500 mt-1 italic">{a.libelle}{a.description ? ` — ${a.description}` : ''}</p> : null; })()}
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Date de mise en œuvre souhaitée</label>
+                <label className="form-label">Date de mise en œuvre souhaitée</label>
                 <div className="flex gap-3">
                   {YEARS.map((y) => (
-                    <label key={y} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <label key={y} className="flex items-center gap-2 text-base cursor-pointer">
                       <input type="checkbox" checked={detail.date_souhaitee.includes(y)} onChange={() => toggleYear(y)} className="accent-[#EC4B52]" />
                       {y}
                     </label>
@@ -323,13 +330,13 @@ export default function Collecte() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Organisme pressenti</label>
+                <label className="form-label">Organisme pressenti</label>
                 <div className="flex gap-4">
-                  <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <label className="flex items-center gap-2 text-base cursor-pointer">
                     <input type="radio" name="orga" checked={detail.organisme === 'CNFPT'} onChange={() => updateDetail('organisme', 'CNFPT')} className="accent-[#29345C]" />
                     CNFPT
                   </label>
-                  <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <label className="flex items-center gap-2 text-base cursor-pointer">
                     <input type="radio" name="orga" checked={detail.organisme === 'autre'} onChange={() => updateDetail('organisme', 'autre')} className="accent-[#29345C]" />
                     Autre
                   </label>
@@ -338,29 +345,29 @@ export default function Collecte() {
               {detail.organisme === 'autre' && (
                 <>
                   <div>
-                    <label className="block text-xs font-medium mb-1">Nom de l'organisme</label>
-                    <input type="text" value={detail.organisme_nom} onChange={(e) => updateDetail('organisme_nom', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Nom de l'organisme externe" />
+                    <label className="form-label">Nom de l'organisme</label>
+                    <input type="text" value={detail.organisme_nom} onChange={(e) => updateDetail('organisme_nom', e.target.value)} className="form-input" required placeholder="Nom de l'organisme externe" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1">Justification du recours à un organisme externe</label>
-                    <textarea value={detail.justification} onChange={(e) => updateDetail('justification', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" rows={2} required placeholder="Pourquoi le CNFPT n'a pas été retenu pour ce besoin spécifique ?" />
+                    <label className="form-label">Justification du recours à un organisme externe</label>
+                    <textarea value={detail.justification} onChange={(e) => updateDetail('justification', e.target.value)} className="form-input" rows={2} required placeholder="Pourquoi le CNFPT n'a pas été retenu pour ce besoin spécifique ?" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1">Estimation budgétaire</label>
-                    <input type="text" value={detail.estimation_budget} onChange={(e) => updateDetail('estimation_budget', e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" required placeholder="Ex: 5 000 €" />
+                    <label className="form-label">Estimation budgétaire</label>
+                    <input type="text" value={detail.estimation_budget} onChange={(e) => updateDetail('estimation_budget', e.target.value)} className="form-input" required placeholder="Ex: 5 000 €" />
                   </div>
                 </>
               )}
               <div className="w-24">
-                <label className="block text-xs font-medium mb-1">Nombre d'agents</label>
-                <input type="number" min={1} value={detail.nb_agents} onChange={(e) => updateDetail('nb_agents', Number(e.target.value))} className="w-full border rounded px-2 py-1.5 text-sm" required />
+                <label className="form-label">Nombre d'agents</label>
+                <input type="number" min={1} value={detail.nb_agents} onChange={(e) => updateDetail('nb_agents', Number(e.target.value))} className="form-input" required />
               </div>
             </>
           )}
         </div>
 
         <div className="flex justify-end pt-4">
-          <button type="submit" className="flex items-center gap-2 bg-ivry-navy text-white px-6 py-2 rounded hover:bg-ivry-navy-dark transition">
+          <button type="submit" className="flex items-center gap-2 bg-ivry-navy text-white px-8 py-3.5 rounded hover:bg-ivry-navy-dark transition text-base font-semibold">
             <Send className="w-4 h-4" /> Soumettre la demande
           </button>
         </div>

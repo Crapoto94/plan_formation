@@ -66,7 +66,7 @@ export default function Login() {
               placeholder="Identifiant AD"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy rounded-sm"
+              className="w-full border border-gray-200 px-4 py-4 text-base focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy rounded-sm"
               required
             />
             <input
@@ -74,13 +74,13 @@ export default function Login() {
               placeholder="Mot de passe"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy rounded-sm"
+              className="w-full border border-gray-200 px-4 py-4 text-base focus:outline-none focus:border-ivry-navy focus:ring-1 focus:ring-ivry-navy rounded-sm"
               required
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-ivry-navy text-white py-2.5 text-sm font-medium hover:bg-ivry-navy-dark transition-colors uppercase tracking-wider rounded-sm"
+            className="w-full bg-ivry-navy text-white py-4 text-base font-semibold hover:bg-ivry-navy-dark transition-colors uppercase tracking-wider rounded-sm"
           >
             Se connecter
           </button>
