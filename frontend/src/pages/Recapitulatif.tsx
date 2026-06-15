@@ -61,7 +61,7 @@ export default function Recapitulatif() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [viewMode, setViewMode] = useState<'direction' | 'obligatoire'>('direction');
+  const [viewMode, setViewMode] = useState<'direction' | 'obligatoire' | 'domaine'>('direction');
 
   useEffect(() => {
     (async () => {
@@ -129,8 +129,36 @@ export default function Recapitulatif() {
     return [...map.values()].sort((a, b) => a.libelle.localeCompare(b.libelle));
   }, [data]);
 
-  function toggle(dir: string) {
-    setExpanded((p) => ({ ...p, [dir]: !p[dir] }));
+  const groupedByDomaine = useMemo(() => {
+    const map = new Map<string, Soumission[]>();
+    for (const s of data) {
+      for (const d of (s.details || [])) {
+        const domaine = d.domaine_libelle || 'Sans domaine';
+        if (!map.has(domaine)) map.set(domaine, []);
+        map.get(domaine)!.push(s);
+      }
+    }
+    const arr = [...map.entries()].map(([domaine, rows]) => {
+      type Row = Detail & { service: string; agent_name: string };
+      const details: Row[] = rows.flatMap((s) =>
+        (s.details?.length ? s.details.filter((det) => (det.domaine_libelle || 'Sans domaine') === domaine) : [{ id: 0, nb_agents: 0, statut: s.statut } as Detail]).map((d) => ({
+          ...d,
+          service: s.service,
+          agent_name: s.agent_name,
+        }))
+      );
+      const totalBudget = details.reduce((sum, d) => {
+        const n = parseFloat(String(d.estimation_budget || '0').replace(/[^0-9,.-]/g, '').replace(',', '.'));
+        return sum + (isNaN(n) ? 0 : n);
+      }, 0);
+      return { domaine, rows, details, totalBudget };
+    });
+    arr.sort((a, b) => a.domaine.localeCompare(b.domaine));
+    return arr;
+  }, [data]);
+
+  function toggle(key: string) {
+    setExpanded((p) => ({ ...p, [key]: !p[key] }));
   }
 
   if (loading) {
@@ -172,6 +200,12 @@ export default function Recapitulatif() {
         >
           <Shield className="w-4 h-4" /> Formations obligatoires
         </button>
+        <button
+          onClick={() => setViewMode('domaine')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium transition ${viewMode === 'domaine' ? 'bg-ivry-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        >
+          <LayoutList className="w-4 h-4" /> Par domaine
+        </button>
       </div>
 
       {viewMode === 'obligatoire' ? (
@@ -207,6 +241,88 @@ export default function Recapitulatif() {
             </div>
           )}
         </div>
+      ) : viewMode === 'domaine' ? (
+        <>
+          {groupedByDomaine.map((g) => {
+          const isOpen = expanded[g.domaine] !== false;
+          return (
+            <div key={g.domaine} className="mb-6">
+              <button
+                onClick={() => toggle(g.domaine)}
+                className="flex items-center gap-2 w-full text-left mb-2"
+              >
+                {isOpen ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                <h2 className="text-lg font-bold text-ivry-navy border-l-4 border-ivry-red pl-3">{g.domaine}</h2>
+                <span className="text-xs text-gray-400">({g.details.length} ligne{(g.details.length > 1 ? 's' : '')})</span>
+                <span className="ml-auto flex items-center gap-1 text-xs font-medium text-ivry-red">
+                  <Euro className="w-3 h-3" /> {g.totalBudget.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                </span>
+              </button>
+
+              {isOpen && (
+                <div className="overflow-x-auto rounded border shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-3 py-3">Date</th>
+                        <th className="px-3 py-3">Demandeur</th>
+                        <th className="px-3 py-3">Service</th>
+                        <th className="px-3 py-3">Formation</th>
+                        <th className="px-3 py-3">Domaine</th>
+                        <th className="px-3 py-3">Axe</th>
+                        <th className="px-3 py-3">Agents</th>
+                        <th className="px-3 py-3">Date souhaitée</th>
+                        <th className="px-3 py-3">Prix</th>
+                        <th className="px-3 py-3">Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {g.rows.map((s) => {
+                        const details = (s.details || []).filter((d) => (d.domaine_libelle || 'Sans domaine') === g.domaine);
+                        if (!details.length) return null;
+                        return details.map((d) => (
+                          <tr key={`${s.id}-${d.id}`} className="hover:bg-gray-50">
+                            <td className="px-3 py-2 whitespace-nowrap">{new Date(s.created_at).toLocaleDateString('fr-FR')}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">{s.agent_name}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">{s.service}</td>
+                            <td className="px-3 py-2">
+                              {d.type === 'autre' ? (d.intitule || 'Formation autre') : <><Shield className="w-3.5 h-3.5 text-ivry-navy inline-block mr-1" />{d.formation_libelle || '—'}</>}
+                            </td>
+                            <td className="px-3 py-2">{d.domaine_libelle || '—'}</td>
+                            <td className="px-3 py-2 text-gray-500 text-xs">
+                              {d.axe_libelle
+                                ? d.axe_description
+                                  ? `${d.axe_libelle} — ${d.axe_description}`
+                                  : d.axe_libelle
+                                : '—'}
+                            </td>
+                            <td className="px-3 py-2">{d.nb_agents}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">{formatDate(d.date_souhaitee)}</td>
+                            <td className="px-3 py-2 whitespace-nowrap">{formatBudget(d.estimation_budget)}</td>
+                            <td className="px-3 py-2">
+                              {badge(d.statut || '')}
+                              {d.motif_refus && <p className="text-xs text-red-500 mt-1 max-w-40">{d.motif_refus}</p>}
+                            </td>
+                          </tr>
+                        ));
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+          {!groupedByDomaine.length && !loading && (
+            <p className="bg-gray-100 text-gray-500 px-4 py-3 rounded text-sm">Aucune demande soumise pour le moment.</p>
+          )}
+
+          <div className="mt-8 pt-4 border-t text-xs text-gray-400">
+            <strong>Total général : </strong>
+            {groupedByDomaine.reduce((sum, g) => sum + g.totalBudget, 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+          </div>
+        </>
       ) : (
         <>
           {grouped.map((g) => {
