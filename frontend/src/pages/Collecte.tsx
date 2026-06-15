@@ -149,6 +149,8 @@ export default function Collecte() {
           motif_refus: s.motif_refus,
           type: '' as string | undefined,
           organisme: '' as string | undefined,
+          organisme_nom: '' as string | undefined,
+          date_souhaitee: '' as string | undefined,
           estimation_budget: '' as string | undefined,
         }];
       }
@@ -163,6 +165,8 @@ export default function Collecte() {
         motif_refus: d.motif_refus ?? s.motif_refus,
         type: d.type,
         organisme: d.organisme,
+        organisme_nom: d.organisme_nom,
+        date_souhaitee: d.date_souhaitee,
         estimation_budget: d.estimation_budget,
       }));
     });
@@ -198,6 +202,9 @@ export default function Collecte() {
                 <th className="px-3 py-3">Formation</th>
                 <th className="px-3 py-3">Axe</th>
                 <th className="px-3 py-3">Agents</th>
+                <th className="px-3 py-3">Date souhaitée</th>
+                {title !== 'Réglementaires' && title !== 'CNFPT' && <th className="px-3 py-3">Organisme</th>}
+                <th className="px-3 py-3">Prix estimé</th>
                 <th className="px-3 py-3">Statut</th>
               </tr>
             </thead>
@@ -214,6 +221,22 @@ export default function Collecte() {
                       : '—'}
                   </td>
                   <td className="px-3 py-2">{r.nb_agents}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{
+                    r.date_souhaitee
+                      ? (() => {
+                          try { return new Date(r.date_souhaitee!).toLocaleDateString('fr-FR'); } catch { return r.date_souhaitee; }
+                        })()
+                      : '—'
+                  }</td>
+                  {title !== 'Réglementaires' && title !== 'CNFPT' && <td className="px-3 py-2">{r.organisme_nom || '—'}</td>}
+                  <td className="px-3 py-2 whitespace-nowrap">{
+                    r.estimation_budget
+                      ? (() => {
+                          const val = parseFloat(String(r.estimation_budget!).replace(/[^0-9,.-]/g, '').replace(',', '.'));
+                          return isNaN(val) ? r.estimation_budget : val.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+                        })()
+                      : '—'
+                  }</td>
                   <td className="px-3 py-2">
                     {badge(r.statut)}
                     {r.motif_refus && <p className="text-xs text-red-500 mt-1 max-w-40">{r.motif_refus}</p>}
