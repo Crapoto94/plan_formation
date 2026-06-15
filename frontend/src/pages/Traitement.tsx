@@ -232,39 +232,39 @@ export default function Traitement() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="w-full mx-auto px-2 py-1">
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-2xl font-bold">Demandes de formation</h1>
-          {org.direction && <p className="text-sm text-gray-500">{org.direction} — {org.role}</p>}
+          <h1 className="text-base font-bold">Demandes</h1>
+          {org.direction && <p className="text-xs text-gray-500">{org.direction} — {org.role}</p>}
         </div>
-        <span className="text-sm text-gray-400">{displayRows.length} / {allRows.length} demande(s)</span>
+        <span className="text-xs text-gray-400">{displayRows.length} / {allRows.length}</span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-3 p-2 bg-gray-50 rounded border">
-        <span className="text-xs font-medium text-gray-500">Filtres</span>
+      <div className="flex flex-wrap items-center gap-1 mb-2 p-1.5 bg-gray-50 rounded border">
+        <span className="text-[10px] font-medium text-gray-500">Filtres</span>
         <select value={filterService} onChange={(e) => setFilterService(e.target.value)}
-          className="text-sm border rounded px-2 py-1 bg-white">
-          <option value="">Tous les services</option>
+          className="text-xs border rounded px-1.5 py-0.5 bg-white max-w-32">
+          <option value="">Tous services</option>
           {services.map((svc) => <option key={svc} value={svc}>{svc}</option>)}
         </select>
         <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)}
-          className="text-sm border rounded px-2 py-1 bg-white">
-          <option value="">Tous les statuts</option>
+          className="text-xs border rounded px-1.5 py-0.5 bg-white max-w-28">
+          <option value="">Tous statuts</option>
           <option value="en_attente">En attente</option>
           <option value="valide">Validé</option>
           <option value="refuse">Refusé</option>
         </select>
-        <div className="flex items-center gap-1">
-          <Search className="w-3 h-3 text-gray-400" />
-          <input type="text" placeholder="Rechercher..."
+        <div className="flex items-center gap-0.5">
+          <Search className="w-2.5 h-2.5 text-gray-400" />
+          <input type="text" placeholder="Agent..."
             value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)}
-            className="text-sm border rounded px-2 py-1 bg-white w-36" />
+            className="text-xs border rounded px-1.5 py-0.5 bg-white w-24" />
         </div>
       </div>
 
       {canValidate && selected.size > 0 && (
-        <div className="bg-ivry-navy/5 border border-ivry-navy/20 rounded p-2 mb-3 flex items-center gap-2">
+        <div className="bg-ivry-navy/5 border border-ivry-navy/20 rounded p-1.5 mb-2 flex items-center gap-1.5 text-xs">
           <span className="text-sm font-medium">{selected.size} sélectionnée(s)</span>
           <button onClick={handleValider} className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700">
             <CheckCircle className="w-4 h-4" /> Valider
@@ -280,86 +280,86 @@ export default function Traitement() {
           <thead>
             <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               {canValidate && (
-                <th className="px-2 py-2 w-8">
+                <th className="px-1.5 py-1.5 w-7">
                   <input type="checkbox"
                     checked={displayRows.length > 0 && displayRows.every((r) => selected.has(r.key))}
                     onChange={() => toggleAll(displayRows.map((r) => r.key))}
                     className="accent-[#29345C]" />
                 </th>
               )}
-              <th className="px-2 py-2 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('agent_name')}>
+              <th className="px-1.5 py-1.5 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('agent_name')}>
                 Demandeur {sortIcon('agent_name')}
               </th>
-              <th className="px-2 py-2 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('created_at')}>
+              <th className="px-1.5 py-1.5 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('created_at')}>
                 Date {sortIcon('created_at')}
               </th>
-              <th className="px-2 py-2">Formation</th>
-              <th className="px-2 py-2">Domaine</th>
-              <th className="px-2 py-2">Axe</th>
-              <th className="px-2 py-2">Agents</th>
-              <th className="px-2 py-2 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('service')}>
+              <th className="px-1.5 py-1.5">Formation</th>
+              <th className="px-1.5 py-1.5">Domaine</th>
+              <th className="px-1.5 py-1.5">Axe</th>
+              <th className="px-1.5 py-1.5">Agents</th>
+              <th className="px-1.5 py-1.5 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('service')}>
                 Service {sortIcon('service')}
               </th>
-              <th className="px-2 py-2 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('statut')}>
+              <th className="px-1.5 py-1.5 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('statut')}>
                 Statut {sortIcon('statut')}
               </th>
-              {canValidate && <th className="px-2 py-2">Actions</th>}
-              {canValidate && <th className="px-2 py-2">Commentaire</th>}
+              {canValidate && <th className="px-1.5 py-1.5">Actions</th>}
+              {canValidate && <th className="px-1.5 py-1.5">Commentaire</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {displayRows.map((r) => (
               <tr key={r.key} className={`hover:bg-gray-50 ${r.statut !== 'en_attente' ? 'text-gray-400' : ''}`}>
                 {canValidate && (
-                  <td className="px-2 py-1.5">
+                  <td className="px-1.5 py-1">
                     {r.statut === 'en_attente' && (
                       <input type="checkbox" checked={selected.has(r.key)} onChange={() => toggle(r.key)} className="accent-[#29345C]" />
                     )}
                   </td>
                 )}
-                <td className="px-2 py-1.5 font-medium">{r.agent_name}</td>
-                <td className="px-2 py-1.5 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
-                <td className="px-2 py-1.5">{r.formation_libelle || '—'}</td>
-                <td className="px-2 py-1.5">{r.domaine_libelle || '—'}</td>
-                <td className="px-2 py-1.5 text-gray-500">
+                <td className="px-1.5 py-1 font-medium text-xs">{r.agent_name}</td>
+                <td className="px-1.5 py-1 whitespace-nowrap text-xs">{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
+                <td className="px-1.5 py-1 text-xs">{r.formation_libelle || '—'}</td>
+                <td className="px-1.5 py-1 text-xs">{r.domaine_libelle || '—'}</td>
+                <td className="px-1.5 py-1 text-gray-500 text-xs">
                   {r.axe_libelle
                     ? r.axe_description
                       ? `${r.axe_libelle} — ${r.axe_description}`
                       : r.axe_libelle
                     : '—'}
                 </td>
-                <td className="px-2 py-1.5">{r.nb_agents}</td>
-                <td className="px-2 py-1.5">{r.service || '—'}</td>
-                <td className="px-2 py-1.5">
+                <td className="px-1.5 py-1 text-xs">{r.nb_agents}</td>
+                <td className="px-1.5 py-1 text-xs">{r.service || '—'}</td>
+                <td className="px-1.5 py-1">
                   {badge(r.statut)}
-                  {r.motif_refus && <p className="text-xs text-red-500 mt-1 max-w-40">{r.motif_refus}</p>}
+                  {r.motif_refus && <p className="text-xs text-red-500 mt-0.5 max-w-32">{r.motif_refus}</p>}
                 </td>
                 {canValidate && (
-                  <td className="px-2 py-1.5">
+                  <td className="px-1.5 py-1">
                     {r.statut === 'en_attente' && (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         <button onClick={() => validerLigne(r)}
-                          className="flex items-center gap-0.5 bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700">
-                          <CheckCircle className="w-3 h-3" /> Valider
+                          className="flex items-center gap-0.5 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-green-700">
+                          <CheckCircle className="w-2.5 h-2.5" /> V
                         </button>
                         <button onClick={() => refuserLigne(r)}
-                          className="flex items-center gap-0.5 bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700">
-                          <XCircle className="w-3 h-3" /> Refuser
+                          className="flex items-center gap-0.5 bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-red-700">
+                          <XCircle className="w-2.5 h-2.5" /> R
                         </button>
                       </div>
                     )}
                   </td>
                 )}
                 {canValidate && (
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3 text-gray-300 shrink-0" />
+                  <td className="px-1.5 py-1">
+                    <div className="flex items-center gap-0.5">
+                      <MessageSquare className="w-2.5 h-2.5 text-gray-300 shrink-0" />
                       <input
                         type="text"
                         placeholder="..."
                         value={comments[r.soumissionId] ?? r.commentaire ?? ''}
                         onChange={(e) => setComments({ ...comments, [r.soumissionId]: e.target.value })}
-                        className="w-16 border-b border-gray-200 text-xs py-0.5 focus:outline-none focus:border-ivry-navy bg-transparent"
+                        className="w-12 border-b border-gray-200 text-[10px] py-0.5 focus:outline-none focus:border-ivry-navy bg-transparent"
                       />
                     </div>
                   </td>
