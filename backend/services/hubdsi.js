@@ -6,10 +6,13 @@ const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 function getClient(token) {
   const { hubdsi } = config.getApiConfig();
+  const isHttps = hubdsi.url.startsWith('https');
   return axios.create({
     baseURL: hubdsi.url,
     headers: { Authorization: `Bearer ${token}`, 'X-API-Key': hubdsi.key },
-    httpsAgent,
+    timeout: 10000,
+    proxy: false,
+    ...(isHttps ? { httpsAgent } : {}),
   });
 }
 

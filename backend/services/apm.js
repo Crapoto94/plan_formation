@@ -9,6 +9,8 @@ function getClient() {
   return axios.create({
     baseURL: apm.url,
     headers: { 'X-API-KEY': apm.key },
+    timeout: 10000,
+    proxy: false,
     httpsAgent,
   });
 }
