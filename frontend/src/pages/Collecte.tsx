@@ -224,7 +224,10 @@ export default function Collecte() {
                   <td className="px-3 py-2 whitespace-nowrap">{
                     r.date_souhaitee
                       ? (() => {
-                          try { return new Date(r.date_souhaitee!).toLocaleDateString('fr-FR'); } catch { return r.date_souhaitee; }
+                          let raw = r.date_souhaitee!;
+                          try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) raw = parsed[0]; } catch {}
+                          const d = new Date(raw);
+                          return isNaN(d.getTime()) ? raw : d.toLocaleDateString('fr-FR');
                         })()
                       : '—'
                   }</td>
