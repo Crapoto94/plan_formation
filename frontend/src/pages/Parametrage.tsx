@@ -598,6 +598,19 @@ function ServiceFormationSection() {
 
 export default function Parametrage() {
   const [viderStatus, setViderStatus] = useState<'idle' | 'deleting' | 'done' | 'error'>('idle');
+  const role = localStorage.getItem('role');
+  const [orgRole, setOrgRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get('/api/v1/auth/me').then((r) => {
+      const o = r.data?.org;
+      if (o?.role) { setOrgRole(o.role); localStorage.setItem('org_role', o.role); }
+    }).catch(() => {});
+  }, []);
+
+  const effectiveRole = orgRole || localStorage.getItem('org_role') || role;
+  const isAdmin = role === 'admin';
+  const isSvcForm = effectiveRole === 'service_formation';
 
   async function handleVider() {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer toutes les demandes de formation ? Cette action est irréversible.')) return;
@@ -620,43 +633,53 @@ export default function Parametrage() {
         <h1 className="text-2xl font-bold">Paramétrage</h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mb-6">
-        <FormationsSection />
-        <AxesSection />
-      </div>
+      {isAdmin && (
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <FormationsSection />
+          <AxesSection />
+        </div>
+      )}
 
-      <div className="mb-6">
-        <DomainesSection />
-      </div>
+      {isAdmin && (
+        <div className="mb-6">
+          <DomainesSection />
+        </div>
+      )}
 
-      <div className="mb-6">
-        <ServiceFormationSection />
-      </div>
+      {isAdmin && (
+        <div className="mb-6">
+          <ServiceFormationSection />
+        </div>
+      )}
 
       <div className="mb-6">
         <PageDescriptionsSection />
       </div>
 
-      <ApiConfigSection />
+      {isAdmin && (
+        <ApiConfigSection />
+      )}
 
-      <div className="mt-8 pt-6 border-t border-red-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-red-600">Zone dangereuse</h3>
-            <p className="text-xs text-gray-500">Supprimer définitivement toutes les demandes de formation</p>
+      {isAdmin && (
+        <div className="mt-8 pt-6 border-t border-red-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-red-600">Zone dangereuse</h3>
+              <p className="text-xs text-gray-500">Supprimer définitivement toutes les demandes de formation</p>
+            </div>
+            <button
+              onClick={handleVider}
+              disabled={viderStatus === 'deleting'}
+              className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700 transition disabled:opacity-50"
+            >
+              {viderStatus === 'deleting' ? <Loader className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              Vider la base
+            </button>
           </div>
-          <button
-            onClick={handleVider}
-            disabled={viderStatus === 'deleting'}
-            className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700 transition disabled:opacity-50"
-          >
-            {viderStatus === 'deleting' ? <Loader className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            Vider la base
-          </button>
+          {viderStatus === 'done' && <p className="text-green-600 text-xs mt-2">Toutes les demandes ont été supprimées.</p>}
+          {viderStatus === 'error' && <p className="text-red-600 text-xs mt-2">Erreur lors de la suppression.</p>}
         </div>
-        {viderStatus === 'done' && <p className="text-green-600 text-xs mt-2">Toutes les demandes ont été supprimées.</p>}
-        {viderStatus === 'error' && <p className="text-red-600 text-xs mt-2">Erreur lors de la suppression.</p>}
-      </div>
+      )}
     </div>
   );
 }

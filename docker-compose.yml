@@ -17,6 +17,8 @@ services:
       - HUBDSI_API_KEY=${HUBDSI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_USERS=${ADMIN_USERS}
+      - DIRECTEUR_USERS=${DIRECTEUR_USERS:-}
+      - DGA_USERS=${DGA_USERS:-}
     env_file:
       - ./backend/.env
     networks:

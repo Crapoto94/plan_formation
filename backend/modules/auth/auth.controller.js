@@ -118,6 +118,19 @@ async function me(req, res) {
     } catch (e) { console.error('[me] fallback err:', e.message); }
   }
 
+  if (info.org.role === 'agent') {
+    const username = (req.user.username || '').toLowerCase();
+    const dgaUsers = (process.env.DGA_USERS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const directeurUsers = (process.env.DIRECTEUR_USERS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (dgaUsers.includes(username)) {
+      info.org.role = 'directeur';
+      info.org.fonction = 'dga';
+    } else if (directeurUsers.includes(username)) {
+      info.org.role = 'directeur';
+      info.org.fonction = 'directeur';
+    }
+  }
+
   res.json(info);
 }
 

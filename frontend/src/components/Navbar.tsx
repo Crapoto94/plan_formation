@@ -41,9 +41,10 @@ export default function Navbar() {
   const effectiveFonction = orgFonction || localStorage.getItem('org_fonction') || null;
 
   function canShow(path: string) {
-    if (path === '/param') return role === 'admin' || effectiveRole === 'service_formation' || (effectiveRole === 'directeur' && isDGADGA(effectiveFonction));
-    if (path === '/traitement') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation' || (effectiveRole === 'directeur' && isDGADGA(effectiveFonction));
-    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || effectiveFonction === 'dg' || isDGADGA(effectiveFonction);
+    const isDgDga = isDGADGA(effectiveFonction);
+    if (path === '/param') return role === 'admin' || effectiveRole === 'service_formation' || isDgDga;
+    if (path === '/traitement') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation' || effectiveRole === 'responsable_service' || isDgDga;
+    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || effectiveFonction === 'dg' || isDgDga;
     return true;
   }
 

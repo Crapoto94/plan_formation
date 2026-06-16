@@ -194,11 +194,6 @@ async function getPageConfig(req, res) {
 }
 
 async function updatePageConfig(req, res) {
-  const isAdmin = req.user.role === 'admin';
-  const isSvcForm = configService.isServiceFormation(req.user.email);
-  if (!isAdmin && !isSvcForm) {
-    return res.status(403).json({ error: 'Accès réservé aux administrateurs ou au service formation' });
-  }
   const { message_general, description_collecte, description_traitement, description_recapitulatif } = req.body;
   const current = configService.read();
   const updated = {
