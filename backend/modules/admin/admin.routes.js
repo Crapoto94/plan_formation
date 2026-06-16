@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { authenticate } = require('../../middleware/auth');
-const { requireAdmin } = require('../../middleware/admin');
+const { requireAdmin, requireAdminOrServiceFormation } = require('../../middleware/admin');
 const controller = require('./admin.controller');
 
 const router = Router();
@@ -11,16 +11,19 @@ router.get('/formations', controller.listFormations);
 router.get('/axes', controller.listAxes);
 router.get('/domaines', controller.listDomaines);
 
-// Routes d'écriture — admin uniquement
-router.post('/formations', requireAdmin, controller.createFormation);
-router.put('/formations/:id', requireAdmin, controller.updateFormation);
-router.delete('/formations/:id', requireAdmin, controller.deleteFormation);
-router.post('/axes', requireAdmin, controller.createAxe);
-router.put('/axes/:id', requireAdmin, controller.updateAxe);
-router.delete('/axes/:id', requireAdmin, controller.deleteAxe);
-router.post('/domaines', requireAdmin, controller.createDomaine);
-router.put('/domaines/:id', requireAdmin, controller.updateDomaine);
-router.delete('/domaines/:id', requireAdmin, controller.deleteDomaine);
+// Routes d'écriture — admin ou service formation
+router.post('/formations', requireAdminOrServiceFormation, controller.createFormation);
+router.put('/formations/:id', requireAdminOrServiceFormation, controller.updateFormation);
+router.delete('/formations/:id', requireAdminOrServiceFormation, controller.deleteFormation);
+router.post('/axes', requireAdminOrServiceFormation, controller.createAxe);
+router.put('/axes/:id', requireAdminOrServiceFormation, controller.updateAxe);
+router.delete('/axes/:id', requireAdminOrServiceFormation, controller.deleteAxe);
+router.post('/domaines', requireAdminOrServiceFormation, controller.createDomaine);
+router.put('/domaines/:id', requireAdminOrServiceFormation, controller.updateDomaine);
+router.delete('/domaines/:id', requireAdminOrServiceFormation, controller.deleteDomaine);
+
+router.get('/service-formation', requireAdminOrServiceFormation, controller.getServiceFormation);
+router.put('/service-formation', requireAdminOrServiceFormation, controller.updateServiceFormation);
 
 router.get('/config', requireAdmin, controller.getConfig);
 router.get('/page-config', authenticate, controller.getPageConfig);
@@ -32,7 +35,5 @@ router.post('/test-hubdsi', requireAdmin, controller.testHubdsi);
 router.delete('/vider-base', requireAdmin, controller.viderBase);
 
 router.get('/ad/search', requireAdmin, controller.adSearch);
-router.get('/service-formation', requireAdmin, controller.getServiceFormation);
-router.put('/service-formation', requireAdmin, controller.updateServiceFormation);
 
 module.exports = router;

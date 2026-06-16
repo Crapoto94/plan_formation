@@ -633,24 +633,24 @@ export default function Parametrage() {
         <h1 className="text-2xl font-bold">Paramétrage</h1>
       </div>
 
-      {isAdmin && (
+      {isAdmin || isSvcForm ? (
         <div className="grid grid-cols-2 gap-6 mb-6">
           <FormationsSection />
           <AxesSection />
         </div>
-      )}
+      ) : null}
 
-      {isAdmin && (
+      {isAdmin || isSvcForm ? (
         <div className="mb-6">
           <DomainesSection />
         </div>
-      )}
+      ) : null}
 
-      {isAdmin && (
+      {isAdmin || isSvcForm ? (
         <div className="mb-6">
           <ServiceFormationSection />
         </div>
-      )}
+      ) : null}
 
       <div className="mb-6">
         <PageDescriptionsSection />
