@@ -11,8 +11,9 @@ import Navbar from './components/Navbar';
 function ProtectedRoute({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
+  const orgRole = localStorage.getItem('org_role');
   if (!token) return <Navigate to="/login" replace />;
-  if (adminOnly && role !== 'admin') return <Navigate to="/collecte" replace />;
+  if (adminOnly && role !== 'admin' && orgRole !== 'service_formation') return <Navigate to="/collecte" replace />;
   return <>{children}</>;
 }
 

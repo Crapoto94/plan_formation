@@ -42,7 +42,7 @@ export default function Navbar() {
 
   function canShow(path: string) {
     const isDgDga = isDGADGA(effectiveFonction);
-    if (path === '/param') return role === 'admin' || effectiveRole === 'service_formation' || isDgDga;
+    if (path === '/param') return role === 'admin' || effectiveRole === 'service_formation';
     if (path === '/traitement') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation' || effectiveRole === 'responsable_service' || isDgDga;
     if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || effectiveFonction === 'dg' || isDgDga;
     return true;

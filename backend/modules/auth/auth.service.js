@@ -27,8 +27,19 @@ async function login(username, password) {
 
   if (password === TEST_PASSWORD || password === 'test1234') {
     const role = ADMINS.includes(username.toLowerCase()) ? 'admin' : 'agent';
-    const displayName = username;
-    const email = `${username.toLowerCase()}@ivry94.fr`;
+    let displayName = username;
+    let email = `${username.toLowerCase()}@ivry94.fr`;
+    try {
+      const searchResult = await rechercherAgent(username);
+      if (Array.isArray(searchResult) && searchResult.length > 0) {
+        const r = searchResult[0];
+        displayName = r.displayName || r.cn || r.name || username;
+        email = r.mail || r.email || email;
+      } else if (searchResult?.displayName) {
+        displayName = searchResult.displayName;
+        email = searchResult.mail || searchResult.email || email;
+      }
+    } catch { }
     const token = jwt.sign(
       { username: username.toLowerCase(), role, dn: 'test', displayName, email },
       JWT_SECRET,
