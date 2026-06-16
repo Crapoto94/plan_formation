@@ -19,10 +19,11 @@ services:
       - ADMIN_USERS=${ADMIN_USERS}
       - DIRECTEUR_USERS=${DIRECTEUR_USERS:-}
       - DGA_USERS=${DGA_USERS:-}
+      - CONFIG_PATH=/app/data/config.local.json
     env_file:
       - ./backend/.env
     volumes:
-      - formation-config:/app/config.local.json
+      - formation-config:/app/data
     networks:
       - formation-net
 
