@@ -34,7 +34,9 @@ function getApiConfig() {
 
 function getServiceFormation() {
   const file = read();
-  return (file.serviceFormation || []).map(function(e) { return e.toLowerCase(); });
+  const list = file.serviceFormation || [];
+  if (!Array.isArray(list)) return [];
+  return list.filter(function(e) { return typeof e === 'string'; }).map(function(e) { return e.toLowerCase(); });
 }
 
 function isServiceFormation(email) {
