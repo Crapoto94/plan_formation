@@ -23,6 +23,7 @@ router.put('/domaines/:id', requireAdmin, controller.updateDomaine);
 router.delete('/domaines/:id', requireAdmin, controller.deleteDomaine);
 
 router.get('/config', requireAdmin, controller.getConfig);
+router.get('/page-config', authenticate, controller.getPageConfig);
 router.put('/config', requireAdmin, controller.updateConfig);
 router.post('/test-apm', requireAdmin, controller.testApm);
 router.post('/test-hubdsi', requireAdmin, controller.testHubdsi);

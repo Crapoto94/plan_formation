@@ -43,4 +43,14 @@ function setServiceFormation(emails) {
   write(file);
 }
 
-module.exports = { read, write, getApiConfig, getServiceFormation, setServiceFormation };
+function getPageConfig() {
+  const file = read();
+  return {
+    message_general: file.message_general || '',
+    description_collecte: file.description_collecte || 'Formulaire de collecte des besoins en formation',
+    description_traitement: file.description_traitement || 'Traitement et validation des demandes de formation',
+    description_recapitulatif: file.description_recapitulatif || 'Récapitulatif des demandes de formation',
+  };
+}
+
+module.exports = { read, write, getApiConfig, getServiceFormation, setServiceFormation, getPageConfig };

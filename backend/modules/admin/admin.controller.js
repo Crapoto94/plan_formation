@@ -70,6 +70,7 @@ async function deleteAxe(req, res) {
 async function getConfig(req, res) {
   const apiConfig = configService.getApiConfig();
   const fileConfig = configService.read();
+  const pageConfig = configService.getPageConfig();
   res.json({
     apm: {
       url: apiConfig.apm.url,
@@ -83,13 +84,15 @@ async function getConfig(req, res) {
       keyOverridden: !!fileConfig.hubdsi?.key,
     },
     postgres: { host: process.env.POSTGRES_HOST || '', database: process.env.POSTGRES_DB || '' },
+    ...pageConfig,
   });
 }
 
 async function updateConfig(req, res) {
-  const { apm, hubdsi } = req.body;
+  const { apm, hubdsi, message_general, description_collecte, description_traitement, description_recapitulatif } = req.body;
   const current = configService.read();
   const updated = {
+    ...current,
     apm: {
       url: apm?.url ?? current.apm?.url ?? process.env.APM_API_URL,
       key: apm?.key ?? current.apm?.key ?? process.env.APM_API_KEY,
@@ -99,6 +102,10 @@ async function updateConfig(req, res) {
       key: hubdsi?.key ?? current.hubdsi?.key ?? process.env.HUBDSI_API_KEY,
       path: hubdsi?.path ?? current.hubdsi?.path ?? '/api/admin/rh/organisation-chart',
     },
+    message_general: message_general !== undefined ? message_general : current.message_general,
+    description_collecte: description_collecte !== undefined ? description_collecte : current.description_collecte,
+    description_traitement: description_traitement !== undefined ? description_traitement : current.description_traitement,
+    description_recapitulatif: description_recapitulatif !== undefined ? description_recapitulatif : current.description_recapitulatif,
   };
   configService.write(updated);
   res.json({ success: true, config: updated });
@@ -182,6 +189,10 @@ async function deleteDomaine(req, res) {
   }
 }
 
+async function getPageConfig(req, res) {
+  res.json(configService.getPageConfig());
+}
+
 async function viderBase(req, res) {
   try {
     await repo.viderBase();
@@ -192,4 +203,4 @@ async function viderBase(req, res) {
   }
 }
 
-module.exports = { listFormations, createFormation, updateFormation, deleteFormation, listAxes, createAxe, updateAxe, deleteAxe, listDomaines, createDomaine, updateDomaine, deleteDomaine, getConfig, updateConfig, testApm, testHubdsi, adSearch, getServiceFormation, updateServiceFormation, viderBase };
+module.exports = { listFormations, createFormation, updateFormation, deleteFormation, listAxes, createAxe, updateAxe, deleteAxe, listDomaines, createDomaine, updateDomaine, deleteDomaine, getConfig, updateConfig, getPageConfig, testApm, testHubdsi, adSearch, getServiceFormation, updateServiceFormation, viderBase };

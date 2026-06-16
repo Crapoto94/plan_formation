@@ -3,11 +3,17 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ClipboardList, ClipboardCheck, BarChart3, Settings, LogOut } from 'lucide-react';
 import api from '../api/axios';
 
-const links = [
-  { path: '/collecte', label: 'Collecte', icon: ClipboardList },
-  { path: '/traitement', label: 'Traitement', icon: ClipboardCheck },
-  { path: '/recapitulatif', label: 'Récapitulatif', icon: BarChart3 },
-  { path: '/param', label: 'Paramétrage', icon: Settings },
+function isDGADGA(fonction: string | null) {
+  if (!fonction) return false;
+  const dgKeywords = ['dga', 'directeur.adjoint', 'directeur.general', 'directeur.général', 'dg', 'directeur.adjoint'];
+  return dgKeywords.some((k) => fonction.replace(/[\s_-]+/g, '.').includes(k));
+}
+
+const links: { path: string; label: string; icon: any; descKey: string | null }[] = [
+  { path: '/collecte', label: 'Collecte', icon: ClipboardList, descKey: 'description_collecte' },
+  { path: '/traitement', label: 'Traitement', icon: ClipboardCheck, descKey: 'description_traitement' },
+  { path: '/recapitulatif', label: 'Récapitulatif', icon: BarChart3, descKey: 'description_recapitulatif' },
+  { path: '/param', label: 'Paramétrage', icon: Settings, descKey: null },
 ];
 
 export default function Navbar() {
@@ -17,22 +23,27 @@ export default function Navbar() {
   const displayName = localStorage.getItem('displayName') || '';
   const [orgRole, setOrgRole] = useState<string | null>(null);
   const [orgFonction, setOrgFonction] = useState<string | null>(null);
+  const [descriptions, setDescriptions] = useState<Record<string, string>>({});
+  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
 
   useEffect(() => {
     api.get('/api/v1/auth/me').then((r) => {
       const o = r.data?.org;
       if (o?.role) { setOrgRole(o.role); localStorage.setItem('org_role', o.role); }
       if (o?.fonction) { setOrgFonction(o.fonction); localStorage.setItem('org_fonction', o.fonction); }
-    }).catch(() => { /* ignore */ });
+    }).catch(() => {});
+    api.get('/api/v1/admin/page-config').then((r) => {
+      if (r.data) setDescriptions(r.data);
+    }).catch(() => {});
   }, []);
 
   const effectiveRole = orgRole || localStorage.getItem('org_role') || role;
   const effectiveFonction = orgFonction || localStorage.getItem('org_fonction') || null;
 
   function canShow(path: string) {
-    if (path === '/param') return role === 'admin';
-    if (path === '/traitement') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation';
-    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || effectiveFonction === 'dg';
+    if (path === '/param') return role === 'admin' || effectiveRole === 'service_formation' || (effectiveRole === 'directeur' && isDGADGA(effectiveFonction));
+    if (path === '/traitement') return role === 'admin' || effectiveRole === 'directeur' || effectiveRole === 'service_formation' || (effectiveRole === 'directeur' && isDGADGA(effectiveFonction));
+    if (path === '/recapitulatif') return role === 'admin' || effectiveRole === 'service_formation' || effectiveFonction === 'dg' || isDGADGA(effectiveFonction);
     return true;
   }
 
@@ -80,19 +91,32 @@ export default function Navbar() {
         <nav className="flex">
           {visibleLinks.map((l) => {
             const active = location.pathname === l.path;
+            const desc = l.descKey ? (descriptions[l.descKey] || '') : '';
+            const show = hoveredPath === l.path && desc;
             return (
-              <button
+              <div
                 key={l.path}
-                onClick={() => navigate(l.path)}
-                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors
-                  ${active
-                    ? 'border-ivry-red text-white'
-                    : 'border-transparent text-white/50 hover:text-white/80 hover:border-white/20'
-                  }`}
+                className="relative"
+                onMouseEnter={() => setHoveredPath(l.path)}
+                onMouseLeave={() => setHoveredPath(null)}
               >
-                <l.icon className="w-4 h-4" />
-                {l.label}
-              </button>
+                <button
+                  onClick={() => navigate(l.path)}
+                  className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors
+                    ${active
+                      ? 'border-ivry-red text-white'
+                      : 'border-transparent text-white/50 hover:text-white/80 hover:border-white/20'
+                    }`}
+                >
+                  <l.icon className="w-4 h-4" />
+                  {l.label}
+                </button>
+                {show && (
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded shadow-lg whitespace-nowrap z-50">
+                    {desc}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

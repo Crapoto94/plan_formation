@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Check, X, BookOpen, Target, Settings, Wifi, Loader, Save, Users, Search, Mail, UserPlus, UserMinus } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, BookOpen, Target, Settings, Wifi, Loader, Save, Users, Search, Mail, UserPlus, UserMinus, FileText } from 'lucide-react';
 import api from '../api/axios';
 import type { Formation, Axe, Domaine } from '../types';
 
@@ -233,6 +233,106 @@ function DomainesSection() {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function PageDescriptionsSection() {
+  const [form, setForm] = useState({
+    message_general: '',
+    description_collecte: 'Formulaire de collecte des besoins en formation',
+    description_traitement: 'Traitement et validation des demandes de formation',
+    description_recapitulatif: 'Récapitulatif des demandes de formation',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    api.get('/api/v1/admin/page-config').then(({ data }) => {
+      if (data) {
+        setForm({
+          message_general: data.message_general || '',
+          description_collecte: data.description_collecte || 'Formulaire de collecte des besoins en formation',
+          description_traitement: data.description_traitement || 'Traitement et validation des demandes de formation',
+          description_recapitulatif: data.description_recapitulatif || 'Récapitulatif des demandes de formation',
+        });
+      }
+    }).catch(() => {});
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await api.put('/api/v1/admin/config', form);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setSaved(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded shadow-sm p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <FileText className="w-5 h-5 text-ivry-navy" />
+        <h2 className="text-lg font-bold">Pages et menus</h2>
+      </div>
+
+      <div className="space-y-4 mb-4">
+        <div>
+          <label className="form-label">Message général</label>
+          <p className="text-xs text-gray-500 mb-1">Affiché sur la page de collecte lorsqu'il n'y a pas encore de demande</p>
+          <textarea
+            value={form.message_general}
+            onChange={(e) => setForm({ ...form, message_general: e.target.value })}
+            className="form-input"
+            rows={3}
+            placeholder="Ex: Aucune demande de formation n'a encore été soumise."
+          />
+        </div>
+        <div>
+          <label className="form-label">Description collecte</label>
+          <p className="text-xs text-gray-500 mb-1">Affichée en infobulle au passage de la souris sur le menu Collecte</p>
+          <input
+            type="text"
+            value={form.description_collecte}
+            onChange={(e) => setForm({ ...form, description_collecte: e.target.value })}
+            className="form-input"
+            placeholder="Formulaire de collecte des besoins en formation"
+          />
+        </div>
+        <div>
+          <label className="form-label">Description traitement</label>
+          <p className="text-xs text-gray-500 mb-1">Affichée en infobulle au passage de la souris sur le menu Traitement</p>
+          <input
+            type="text"
+            value={form.description_traitement}
+            onChange={(e) => setForm({ ...form, description_traitement: e.target.value })}
+            className="form-input"
+            placeholder="Traitement et validation des demandes de formation"
+          />
+        </div>
+        <div>
+          <label className="form-label">Description récapitulatif</label>
+          <p className="text-xs text-gray-500 mb-1">Affichée en infobulle au passage de la souris sur le menu Récapitulatif</p>
+          <input
+            type="text"
+            value={form.description_recapitulatif}
+            onChange={(e) => setForm({ ...form, description_recapitulatif: e.target.value })}
+            className="form-input"
+            placeholder="Récapitulatif des demandes de formation"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 text-sm">
+          <Save className="w-4 h-4" /> {saving ? 'Enregistrement...' : 'Enregistrer'}
+        </button>
+        {saved && <span className="text-green-600 text-sm">✓ Configuration sauvegardée</span>}
       </div>
     </div>
   );
@@ -531,6 +631,10 @@ export default function Parametrage() {
 
       <div className="mb-6">
         <ServiceFormationSection />
+      </div>
+
+      <div className="mb-6">
+        <PageDescriptionsSection />
       </div>
 
       <ApiConfigSection />

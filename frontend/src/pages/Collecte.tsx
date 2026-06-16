@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, LogOut, ClipboardList, BookOpen, GraduationCap, List, FileEdit } from 'lucide-react';
+import { Send, LogOut, ClipboardList, BookOpen, GraduationCap, List, FileEdit, AlertTriangle } from 'lucide-react';
 import api from '../api/axios';
 import type { Formation, Axe, Domaine, Soumission } from '../types';
 
@@ -76,6 +76,9 @@ export default function Collecte() {
   const [loadingOrg, setLoadingOrg] = useState(true);
   const [view, setView] = useState<'form' | 'list'>('list');
   const [mesSoumissions, setMesSoumissions] = useState<Soumission[]>([]);
+  const [messageGeneral, setMessageGeneral] = useState('');
+  const [showAgentModal, setShowAgentModal] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const dsName = (ds: DirectionService) => ds.direction ?? ds.name ?? ds.label ?? '';
   const dsServices = (ds: DirectionService) => ds.services ?? ds.children ?? ds.services_list ?? [];
@@ -91,6 +94,9 @@ export default function Collecte() {
       setDirectionsServices(Array.isArray(list) ? list : []);
     }).catch(() => setDirectionsServices([])).finally(() => setLoadingOrg(false));
     api.get('/api/v1/collecte/mes-soumissions').then(({ data }) => setMesSoumissions(data || [])).catch(() => {});
+    api.get('/api/v1/admin/page-config').then(({ data }) => {
+      if (data?.message_general) setMessageGeneral(data.message_general);
+    }).catch(() => {});
   }, []);
 
   function axeLabel(a: Axe) {
@@ -107,9 +113,9 @@ export default function Collecte() {
     updateDetail('date_souhaitee', next);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function doSubmit() {
     setError('');
+    setPendingSubmit(false);
     try {
       await api.post('/api/v1/collecte/soumettre', { service, direction, details: [detail] });
       setSuccess('Demande envoyée avec succès !');
@@ -123,6 +129,16 @@ export default function Collecte() {
       setSuccess('');
       const e = err as any;
       setError(e?.response?.data?.error || e?.message || 'Erreur lors de l\'envoi');
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (detail.nb_agents <= 1) {
+      setShowAgentModal(true);
+    } else {
+      doSubmit();
     }
   }
 
@@ -286,7 +302,12 @@ export default function Collecte() {
         {section('Hors CNFPT', groupedRows.horsCnfpt, groupedRows.totalHorsCnfpt)}
 
         {!allRows.length && (
-          <p className="text-center text-gray-400 py-16">Aucune demande trouvée.</p>
+          <div className="text-center py-16">
+            <p className="text-gray-400">Aucune demande trouvée.</p>
+            {messageGeneral && (
+              <p className="text-gray-500 text-sm mt-3 max-w-lg mx-auto italic">{messageGeneral}</p>
+            )}
+          </div>
         )}
       </div>
     );
@@ -307,17 +328,39 @@ export default function Collecte() {
       {success && <p className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</p>}
       {error && <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</p>}
 
+      {showAgentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0" />
+              <h3 className="text-lg font-bold text-gray-900">Attention</h3>
+            </div>
+            <p className="text-sm text-gray-700 mb-6">
+              Le plan de formation a pour objet le recensement des besoins collectifs. Le nombre d'agents doit être supérieur à 1.
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowAgentModal(false)}
+                className="px-4 py-2 text-sm font-medium text-white bg-ivry-navy rounded hover:bg-ivry-navy-dark transition"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="bg-white rounded shadow-sm p-5 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="form-label">Direction</label>
+            <label className="form-label">Direction <span className="text-red-500">*</span></label>
             <select value={direction} onChange={(e) => { setDirection(e.target.value); setService(''); }} className="form-input" required disabled={loadingOrg}>
               <option value="">Sélectionner...</option>
               {directionsServices.map((ds, i) => <option key={dsName(ds) || i} value={dsName(ds)}>{dsName(ds)}</option>)}
             </select>
           </div>
           <div>
-            <label className="form-label">Service</label>
+            <label className="form-label">Service <span className="text-red-500">*</span></label>
             <select value={service} onChange={(e) => setService(e.target.value)} className="form-input" required disabled={loadingOrg || !direction}>
               <option value="">Sélectionner...</option>
               {filteredServices.map((s, i) => <option key={i} value={svcValue(s)}>{svcLabel(s)}</option>)}
@@ -342,15 +385,15 @@ export default function Collecte() {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="form-label">Formation réglementaire</label>
+                  <label className="form-label">Formation réglementaire <span className="text-red-500">*</span></label>
                   <select value={detail.formation_id} onChange={(e) => updateDetail('formation_id', Number(e.target.value))} className="form-input" required>
                     <option value={0}>Sélectionner...</option>
                     {formations.map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="form-label">Axe</label>
-                  <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="form-input">
+                  <label className="form-label">Axe <span className="text-red-500">*</span></label>
+                  <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="form-input" required>
                     <option value={0}>Sélectionner...</option>
                     {axes.map((a) => <option key={a.id} value={a.id}>{axeLabel(a)}</option>)}
                   </select>
@@ -365,8 +408,8 @@ export default function Collecte() {
                 </select>
               </div>
               <div>
-                <label className="form-label">Motivation</label>
-                <textarea value={detail.motivation} onChange={(e) => updateDetail('motivation', e.target.value)} className="form-input" rows={2} />
+                <label className="form-label">Motivation <span className="text-red-500">*</span></label>
+                <textarea value={detail.motivation} onChange={(e) => updateDetail('motivation', e.target.value)} className="form-input" rows={2} required />
               </div>
               <div>
                 <label className="form-label">Date de mise en œuvre souhaitée</label>
@@ -388,17 +431,17 @@ export default function Collecte() {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="form-label">Intitulé de la formation</label>
+                  <label className="form-label">Intitulé de la formation <span className="text-red-500">*</span></label>
                   <input type="text" value={detail.intitule} onChange={(e) => updateDetail('intitule', e.target.value)} className="form-input" required placeholder="Ex: Gestion du stress, Excel avancé..." />
                 </div>
               </div>
               <div>
-                <label className="form-label">Objectif</label>
+                <label className="form-label">Objectif <span className="text-red-500">*</span></label>
                 <textarea value={detail.objectif} onChange={(e) => updateDetail('objectif', e.target.value)} className="form-input" rows={2} required placeholder="Décrivez l'objectif de cette formation..." />
               </div>
               <div>
-                <label className="form-label">Rapprochement au projet d'administration (Axe)</label>
-                <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="form-input">
+                <label className="form-label">Rapprochement au projet d'administration (Axe) <span className="text-red-500">*</span></label>
+                <select value={detail.axe_id} onChange={(e) => updateDetail('axe_id', Number(e.target.value))} className="form-input" required>
                   <option value={0}>Sélectionner...</option>
                   {axes.map((a) => <option key={a.id} value={a.id}>{axeLabel(a)}</option>)}
                 </select>
