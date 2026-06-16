@@ -24,6 +24,7 @@ router.delete('/domaines/:id', requireAdmin, controller.deleteDomaine);
 
 router.get('/config', requireAdmin, controller.getConfig);
 router.get('/page-config', authenticate, controller.getPageConfig);
+router.put('/page-config', authenticate, controller.updatePageConfig);
 router.put('/config', requireAdmin, controller.updateConfig);
 router.post('/test-apm', requireAdmin, controller.testApm);
 router.post('/test-hubdsi', requireAdmin, controller.testHubdsi);

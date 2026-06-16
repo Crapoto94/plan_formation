@@ -193,6 +193,25 @@ async function getPageConfig(req, res) {
   res.json(configService.getPageConfig());
 }
 
+async function updatePageConfig(req, res) {
+  const isAdmin = req.user.role === 'admin';
+  const isSvcForm = configService.isServiceFormation(req.user.email);
+  if (!isAdmin && !isSvcForm) {
+    return res.status(403).json({ error: 'Accès réservé aux administrateurs ou au service formation' });
+  }
+  const { message_general, description_collecte, description_traitement, description_recapitulatif } = req.body;
+  const current = configService.read();
+  const updated = {
+    ...current,
+    message_general: message_general !== undefined ? message_general : current.message_general,
+    description_collecte: description_collecte !== undefined ? description_collecte : current.description_collecte,
+    description_traitement: description_traitement !== undefined ? description_traitement : current.description_traitement,
+    description_recapitulatif: description_recapitulatif !== undefined ? description_recapitulatif : current.description_recapitulatif,
+  };
+  configService.write(updated);
+  res.json({ success: true });
+}
+
 async function viderBase(req, res) {
   try {
     await repo.viderBase();
@@ -203,4 +222,4 @@ async function viderBase(req, res) {
   }
 }
 
-module.exports = { listFormations, createFormation, updateFormation, deleteFormation, listAxes, createAxe, updateAxe, deleteAxe, listDomaines, createDomaine, updateDomaine, deleteDomaine, getConfig, updateConfig, getPageConfig, testApm, testHubdsi, adSearch, getServiceFormation, updateServiceFormation, viderBase };
+module.exports = { listFormations, createFormation, updateFormation, deleteFormation, listAxes, createAxe, updateAxe, deleteAxe, listDomaines, createDomaine, updateDomaine, deleteDomaine, getConfig, updateConfig, getPageConfig, updatePageConfig, testApm, testHubdsi, adSearch, getServiceFormation, updateServiceFormation, viderBase };

@@ -34,7 +34,12 @@ function getApiConfig() {
 
 function getServiceFormation() {
   const file = read();
-  return file.serviceFormation || [];
+  return (file.serviceFormation || []).map(function(e) { return e.toLowerCase(); });
+}
+
+function isServiceFormation(email) {
+  if (!email) return false;
+  return getServiceFormation().includes(email.toLowerCase());
 }
 
 function setServiceFormation(emails) {
@@ -53,4 +58,4 @@ function getPageConfig() {
   };
 }
 
-module.exports = { read, write, getApiConfig, getServiceFormation, setServiceFormation, getPageConfig };
+module.exports = { read, write, getApiConfig, getServiceFormation, setServiceFormation, getPageConfig, isServiceFormation };

@@ -35,7 +35,7 @@ async function me(req, res) {
   if (info.org.role === 'admin') { res.json(info); return; }
 
   const email = (req.user.email || '').toLowerCase();
-  if (email && config.getServiceFormation().includes(email)) {
+  if (email && config.isServiceFormation(email)) {
     info.org.role = 'service_formation';
     info.org.direction = null;
     info.org.service = null;

@@ -264,7 +264,7 @@ function PageDescriptionsSection() {
   async function handleSave() {
     setSaving(true);
     try {
-      await api.put('/api/v1/admin/config', form);
+      await api.put('/api/v1/admin/page-config', form);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
