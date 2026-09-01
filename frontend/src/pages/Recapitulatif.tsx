@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, ChevronDown, ChevronRight, Euro, Shield, LayoutList, Building2, FileDown } from 'lucide-react';
+import { BarChart3, ChevronDown, ChevronRight, Euro, Shield, LayoutList, Building2, FileDown, Users, ClipboardList, CheckCircle, XCircle, Clock } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import api from '../api/axios';
 
@@ -62,7 +62,7 @@ export default function Recapitulatif() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [viewMode, setViewMode] = useState<'direction' | 'obligatoire' | 'domaine'>('direction');
+  const [viewMode, setViewMode] = useState<'global' | 'direction' | 'obligatoire' | 'domaine'>('global');
 
   useEffect(() => {
     (async () => {
@@ -158,6 +158,51 @@ export default function Recapitulatif() {
     return arr;
   }, [data]);
 
+  const globalStats = useMemo(() => {
+    let totalFormations = 0;
+    let totalAgents = 0;
+    let totalBudget = 0;
+    let enAttente = 0;
+    let valide = 0;
+    let refuse = 0;
+    const dirServiceMap = new Map<string, Map<string, { formations: number; agents: number }>>();
+
+    for (const s of data) {
+      const details = s.details?.length ? s.details : [{ id: 0, nb_agents: 0, statut: s.statut, formation_libelle: '' } as Detail];
+      for (const d of details) {
+        totalFormations++;
+        const agents = d.nb_agents || 0;
+        totalAgents += agents;
+        const b = parseFloat(String(d.estimation_budget || '0').replace(/[^0-9,.-]/g, '').replace(',', '.'));
+        totalBudget += isNaN(b) ? 0 : b;
+        const st = d.statut || s.statut || 'en_attente';
+        if (st === 'valide') valide++;
+        else if (st === 'refuse') refuse++;
+        else enAttente++;
+
+        const dir = s.direction || 'Sans direction';
+        const svc = s.service || 'Sans service';
+        if (!dirServiceMap.has(dir)) dirServiceMap.set(dir, new Map());
+        const svcMap = dirServiceMap.get(dir)!;
+        if (!svcMap.has(svc)) svcMap.set(svc, { formations: 0, agents: 0 });
+        const entry = svcMap.get(svc)!;
+        entry.formations++;
+        entry.agents += agents;
+      }
+    }
+
+    const avgAgents = totalFormations > 0 ? totalAgents / totalFormations : 0;
+    const dirServiceRows: { direction: string; service: string; formations: number; agents: number }[] = [];
+    for (const [dir, svcMap] of dirServiceMap) {
+      for (const [svc, vals] of svcMap) {
+        dirServiceRows.push({ direction: dir, service: svc, formations: vals.formations, agents: vals.agents });
+      }
+    }
+    dirServiceRows.sort((a, b) => a.direction.localeCompare(b.direction) || a.service.localeCompare(b.service));
+
+    return { totalFormations, totalAgents, totalBudget, avgAgents, enAttente, valide, refuse, dirServiceRows };
+  }, [data]);
+
   function toggle(key: string) {
     setExpanded((p) => ({ ...p, [key]: !p[key] }));
   }
@@ -166,7 +211,15 @@ export default function Recapitulatif() {
     let rows: Record<string, any>[] = [];
     let sheetName = 'Récapitulatif';
 
-    if (viewMode === 'obligatoire') {
+    if (viewMode === 'global') {
+      sheetName = 'Vue globale';
+      rows = globalStats.dirServiceRows.map((r) => ({
+        Direction: r.direction,
+        Service: r.service,
+        Formations: r.formations,
+        Agents: r.agents,
+      }));
+    } else if (viewMode === 'obligatoire') {
       sheetName = 'Formations obligatoires';
       rows = obligatoireData.map((f) => ({
         'Formation obligatoire': f.libelle,
@@ -248,6 +301,12 @@ export default function Recapitulatif() {
 
       <div className="flex items-center gap-2 mb-6">
         <button
+          onClick={() => setViewMode('global')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium transition ${viewMode === 'global' ? 'bg-ivry-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        >
+          <BarChart3 className="w-4 h-4" /> Vue globale
+        </button>
+        <button
           onClick={() => setViewMode('direction')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium transition ${viewMode === 'direction' ? 'bg-ivry-navy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
         >
@@ -273,7 +332,98 @@ export default function Recapitulatif() {
         </button>
       </div>
 
-      {viewMode === 'obligatoire' ? (
+      {viewMode === 'global' ? (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="w-5 h-5 text-ivry-navy" />
+            <h2 className="text-lg font-bold">Vue globale — Résumé du plan de formation</h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded border shadow-sm p-4">
+              <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wider mb-1">
+                <ClipboardList className="w-4 h-4" /> Demandes
+              </div>
+              <p className="text-2xl font-bold text-ivry-navy">{data.length}</p>
+            </div>
+            <div className="bg-white rounded border shadow-sm p-4">
+              <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wider mb-1">
+                <Shield className="w-4 h-4" /> Formations demandées
+              </div>
+              <p className="text-2xl font-bold text-ivry-navy">{globalStats.totalFormations}</p>
+            </div>
+            <div className="bg-white rounded border shadow-sm p-4">
+              <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wider mb-1">
+                <Users className="w-4 h-4" /> Agents concernés
+              </div>
+              <p className="text-2xl font-bold text-ivry-navy">{globalStats.totalAgents}</p>
+              <p className="text-xs text-gray-400">moy. {globalStats.avgAgents.toFixed(1)} / formation</p>
+            </div>
+            <div className="bg-white rounded border shadow-sm p-4">
+              <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wider mb-1">
+                <Euro className="w-4 h-4" /> Budget estimé
+              </div>
+              <p className="text-2xl font-bold text-ivry-red">
+                {globalStats.totalBudget.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded px-4 py-2">
+              <Clock className="w-4 h-4 text-yellow-600" />
+              <span className="text-sm font-medium text-yellow-700">En attente : <strong>{globalStats.enAttente}</strong></span>
+            </div>
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded px-4 py-2">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-medium text-green-700">Validées : <strong>{globalStats.valide}</strong></span>
+            </div>
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded px-4 py-2">
+              <XCircle className="w-4 h-4 text-red-600" />
+              <span className="text-sm font-medium text-red-700">Refusées : <strong>{globalStats.refuse}</strong></span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mb-3">
+            <Building2 className="w-5 h-5 text-ivry-navy" />
+            <h3 className="text-base font-bold">Formations par direction / service</h3>
+          </div>
+
+          {globalStats.dirServiceRows.length === 0 ? (
+            <p className="bg-gray-100 text-gray-500 px-4 py-3 rounded text-sm">Aucune demande soumise pour le moment.</p>
+          ) : (
+            <div className="overflow-x-auto rounded border shadow-sm mb-6">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3">Direction</th>
+                    <th className="px-3 py-3">Service</th>
+                    <th className="px-3 py-3 text-right">Formations</th>
+                    <th className="px-3 py-3 text-right">Agents</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {globalStats.dirServiceRows.map((r) => (
+                    <tr key={`${r.direction}—${r.service}`} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium">{r.direction}</td>
+                      <td className="px-3 py-2">{r.service}</td>
+                      <td className="px-3 py-2 text-right">{r.formations}</td>
+                      <td className="px-3 py-2 text-right font-semibold">{r.agents}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-gray-50 font-semibold text-xs">
+                    <td className="px-3 py-2" colSpan={2}>Total</td>
+                    <td className="px-3 py-2 text-right">{globalStats.totalFormations}</td>
+                    <td className="px-3 py-2 text-right">{globalStats.totalAgents}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : viewMode === 'obligatoire' ? (
         <div>
           <div className="flex items-center gap-2 mb-4">
             <Shield className="w-5 h-5 text-ivry-navy" />

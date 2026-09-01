@@ -12,6 +12,45 @@ const LOCAL_USERS = {
   admin: { password: 'admin123', role: 'admin' },
 };
 
+function normalizeLogin(value) {
+  if (!value) return '';
+  return String(value).split('@')[0].toLowerCase();
+}
+
+function pickAdRecord(username, searchResult) {
+  const un = username.toLowerCase();
+  const records = Array.isArray(searchResult) ? searchResult : (Array.isArray(searchResult?.records) ? searchResult.records : []);
+  if (records.length === 0) return null;
+
+  const loginKeys = ['sAMAccountName', 'sAMAccountname', 'samAccountName', 'userPrincipalName', 'accountName', 'uid', 'login', 'username'];
+  for (const r of records) {
+    for (const k of loginKeys) {
+      if (normalizeLogin(r[k]) === un) return r;
+    }
+  }
+  for (const r of records) {
+    if (normalizeLogin(r.mail || r.email) === un) return r;
+    if (normalizeLogin(r.cn) === un || normalizeLogin(r.name) === un) return r;
+  }
+  return records.length === 1 ? records[0] : null;
+}
+
+function enrichUser(username, searchResult, fallbackEmail) {
+  const r = pickAdRecord(username, searchResult);
+  if (!r) {
+    return {
+      displayName: username,
+      email: `${username.toLowerCase()}@ivry94.fr`,
+      matched: false,
+    };
+  }
+  return {
+    displayName: r.displayName || r.cn || r.name || username,
+    email: r.mail || r.email || fallbackEmail,
+    matched: true,
+  };
+}
+
 async function login(username, password) {
   const localUser = LOCAL_USERS[username.toLowerCase()];
   if (localUser && localUser.password === password) {
@@ -27,18 +66,14 @@ async function login(username, password) {
 
   if (password === TEST_PASSWORD || password === 'test1234') {
     const role = ADMINS.includes(username.toLowerCase()) ? 'admin' : 'agent';
+    const fallbackEmail = `${username.toLowerCase()}@ivry94.fr`;
     let displayName = username;
-    let email = `${username.toLowerCase()}@ivry94.fr`;
+    let email = fallbackEmail;
     try {
       const searchResult = await rechercherAgent(username);
-      if (Array.isArray(searchResult) && searchResult.length > 0) {
-        const r = searchResult[0];
-        displayName = r.displayName || r.cn || r.name || username;
-        email = r.mail || r.email || email;
-      } else if (searchResult?.displayName) {
-        displayName = searchResult.displayName;
-        email = searchResult.mail || searchResult.email || email;
-      }
+      const enriched = enrichUser(username, searchResult, fallbackEmail);
+      displayName = enriched.displayName;
+      email = enriched.email;
     } catch { }
     const token = jwt.sign(
       { username: username.toLowerCase(), role, dn: 'test', displayName, email },
@@ -59,14 +94,9 @@ async function login(username, password) {
   let email = '';
   try {
     const searchResult = await rechercherAgent(username);
-    if (Array.isArray(searchResult) && searchResult.length > 0) {
-      const r = searchResult[0];
-      displayName = r.displayName || r.cn || r.name || username;
-      email = r.mail || r.email || '';
-    } else if (searchResult?.displayName) {
-      displayName = searchResult.displayName;
-      email = searchResult.mail || searchResult.email || '';
-    }
+    const enriched = enrichUser(username, searchResult, '');
+    displayName = enriched.displayName;
+    email = enriched.email;
   } catch { }
 
   const token = jwt.sign(
