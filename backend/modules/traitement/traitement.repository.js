@@ -117,4 +117,29 @@ function deleteSoumission(id) {
   return db.get(`DELETE FROM formation.soumissions WHERE id = $1 RETURNING id`, [id]);
 }
 
-module.exports = { findAll, findByStatut, findByDirection, findByService, findByAgent, findById, updateStatut, batchUpdateStatut, updateCommentaire, batchUpdateDetailStatut, getSoumissionIdByDetail, getDetailsBySoumission, updateSoumissionStatut, deleteSoumission };
+const DETAIL_EDITABLE_FIELDS = [
+  'formation_id', 'domaine_id', 'axe_id', 'motivation', 'nb_agents', 'type',
+  'intitule', 'objectif', 'date_souhaitee', 'organisme', 'organisme_nom',
+  'justification', 'estimation_budget',
+];
+
+function updateDetail(id, fields) {
+  const set = [];
+  const values = [];
+  let i = 1;
+  for (const key of DETAIL_EDITABLE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(fields, key)) {
+      set.push(`${key} = $${i}`);
+      values.push(fields[key]);
+      i++;
+    }
+  }
+  if (!set.length) return Promise.resolve(null);
+  values.push(id);
+  return db.get(
+    `UPDATE formation.soumission_details SET ${set.join(', ')} WHERE id = $${i} RETURNING *`,
+    values
+  );
+}
+
+module.exports = { findAll, findByStatut, findByDirection, findByService, findByAgent, findById, updateStatut, batchUpdateStatut, updateCommentaire, batchUpdateDetailStatut, getSoumissionIdByDetail, getDetailsBySoumission, updateSoumissionStatut, deleteSoumission, updateDetail };

@@ -1,10 +1,21 @@
 import { useEffect, useState, useMemo } from 'react';
 import {
   CheckCircle, XCircle, MessageSquare, AlertTriangle, Loader,
-  ChevronUp, ChevronDown, Search, Trash2
+  ChevronUp, ChevronDown, Search, Trash2, Pencil, X
 } from 'lucide-react';
 import api from '../api/axios';
-import type { Soumission, SoumissionDetail } from '../types';
+import type { Soumission, SoumissionDetail, Formation, Axe, Domaine } from '../types';
+
+const EDIT_YEARS = [2027, 2028, 2029];
+
+function parseDateSouhaitee(raw: string | null | undefined): number[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch { /* not JSON */ }
+  return [];
+}
 
 function badge(s: string) {
   const c = s === 'en_attente' ? 'bg-yellow-100 text-yellow-800'
@@ -28,6 +39,34 @@ interface DetailRow {
   axe_libelle: string | null;
   axe_description: string | null;
   nb_agents: number;
+  motivation: string | null;
+  type: 'reglementaire' | 'autre' | null;
+  formation_id: number | null;
+  domaine_id: number | null;
+  axe_id: number | null;
+  intitule: string | null;
+  objectif: string | null;
+  date_souhaitee: string | null;
+  organisme: string | null;
+  organisme_nom: string | null;
+  justification: string | null;
+  estimation_budget: string | null;
+}
+
+interface EditForm {
+  type: 'reglementaire' | 'autre';
+  formation_id: number;
+  domaine_id: number;
+  axe_id: number;
+  motivation: string;
+  nb_agents: number;
+  intitule: string;
+  objectif: string;
+  date_souhaitee: number[];
+  organisme: string;
+  organisme_nom: string;
+  justification: string;
+  estimation_budget: string;
 }
 
 type SortKey = 'agent_name' | 'created_at' | 'service' | 'statut';
@@ -48,6 +87,13 @@ export default function Traitement() {
   const [filterService, setFilterService] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
   const [filterSearch, setFilterSearch] = useState('');
+
+  const [formations, setFormations] = useState<Formation[]>([]);
+  const [axesRef, setAxesRef] = useState<Axe[]>([]);
+  const [domainesRef, setDomainesRef] = useState<Domaine[]>([]);
+  const [editingRow, setEditingRow] = useState<DetailRow | null>(null);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const isAdmin = org.role === 'admin';
   const isDirector = org.role === 'directeur';
@@ -77,7 +123,63 @@ export default function Traitement() {
         setLoading(false);
       }
     })();
+    api.get('/api/v1/admin/formations').then(({ data }) => setFormations(data.filter((f: Formation) => f.active))).catch(() => {});
+    api.get('/api/v1/admin/axes').then(({ data }) => setAxesRef(data.filter((a: Axe) => a.active))).catch(() => {});
+    api.get('/api/v1/admin/domaines').then(({ data }) => setDomainesRef(data.filter((d: Domaine) => d.active))).catch(() => {});
   }, []);
+
+  function axeLabel(a: Axe) {
+    return a.description ? `${a.libelle} — ${a.description}` : a.libelle;
+  }
+
+  function openEdit(r: DetailRow) {
+    if (!r.detailId) return;
+    setEditingRow(r);
+    setEditForm({
+      type: r.type || 'reglementaire',
+      formation_id: r.formation_id || 0,
+      domaine_id: r.domaine_id || 0,
+      axe_id: r.axe_id || 0,
+      motivation: r.motivation || '',
+      nb_agents: r.nb_agents || 1,
+      intitule: r.intitule || '',
+      objectif: r.objectif || '',
+      date_souhaitee: parseDateSouhaitee(r.date_souhaitee),
+      organisme: r.organisme || 'CNFPT',
+      organisme_nom: r.organisme_nom || '',
+      justification: r.justification || '',
+      estimation_budget: r.estimation_budget || '',
+    });
+  }
+
+  function closeEdit() {
+    setEditingRow(null);
+    setEditForm(null);
+  }
+
+  function updateEditField<K extends keyof EditForm>(field: K, value: EditForm[K]) {
+    setEditForm((prev) => (prev ? { ...prev, [field]: value } : prev));
+  }
+
+  function toggleEditYear(year: number) {
+    setEditForm((prev) => {
+      if (!prev) return prev;
+      const next = prev.date_souhaitee.includes(year)
+        ? prev.date_souhaitee.filter((y) => y !== year)
+        : [...prev.date_souhaitee, year];
+      return { ...prev, date_souhaitee: next };
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingRow || !editForm) return;
+    setSavingEdit(true);
+    try {
+      const { data } = await api.patch(`/api/v1/traitement/details/${editingRow.detailId}`, editForm);
+      setSoumissions((prev) => prev.map((s) => (s.id === data.id ? data : s)));
+      closeEdit();
+    } catch { alert('Erreur lors de la modification de la demande'); } finally { setSavingEdit(false); }
+  }
 
   function toggle(key: string) {
     setSelected((p) => { const n = new Set(p); n.has(key) ? n.delete(key) : n.add(key); return n; });
@@ -174,7 +276,7 @@ export default function Traitement() {
   }
 
   const allRows = useMemo(() => {
-    return soumissions.flatMap((s) => {
+    return soumissions.flatMap((s): DetailRow[] => {
       const details: SoumissionDetail[] = s.details?.length ? s.details : [];
       if (!details.length) {
         return [{
@@ -192,6 +294,18 @@ export default function Traitement() {
           axe_libelle: null,
           axe_description: null,
           nb_agents: 0,
+          motivation: null,
+          type: null,
+          formation_id: null,
+          domaine_id: null,
+          axe_id: null,
+          intitule: null,
+          objectif: null,
+          date_souhaitee: null,
+          organisme: null,
+          organisme_nom: null,
+          justification: null,
+          estimation_budget: null,
         }];
       }
       return details.map((d) => ({
@@ -209,6 +323,18 @@ export default function Traitement() {
           axe_libelle: d.axe_libelle || null,
           axe_description: d.axe_description || null,
           nb_agents: d.nb_agents,
+          motivation: d.motivation || null,
+          type: (d.type as 'reglementaire' | 'autre') ?? 'reglementaire',
+          formation_id: d.formation_id ?? null,
+          domaine_id: d.domaine_id ?? null,
+          axe_id: d.axe_id ?? null,
+          intitule: d.intitule ?? null,
+          objectif: d.objectif ?? null,
+          date_souhaitee: d.date_souhaitee ?? null,
+          organisme: d.organisme ?? null,
+          organisme_nom: d.organisme_nom ?? null,
+          justification: d.justification ?? null,
+          estimation_budget: d.estimation_budget ?? null,
         }));
     });
   }, [soumissions]);
@@ -312,6 +438,7 @@ export default function Traitement() {
               <th className="px-1.5 py-1.5">Formation</th>
               <th className="px-1.5 py-1.5">Domaine</th>
               <th className="px-1.5 py-1.5">Axe</th>
+              <th className="px-1.5 py-1.5">Motivation</th>
               <th className="px-1.5 py-1.5">Agents</th>
               <th className="px-1.5 py-1.5 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('service')}>
                 Service {sortIcon('service')}
@@ -319,7 +446,7 @@ export default function Traitement() {
               <th className="px-1.5 py-1.5 cursor-pointer select-none hover:text-ivry-navy" onClick={() => handleSort('statut')}>
                 Statut {sortIcon('statut')}
               </th>
-              {canValidate && <th className="px-1.5 py-1.5">Actions</th>}
+              {canView && <th className="px-1.5 py-1.5">Actions</th>}
               {canValidate && <th className="px-1.5 py-1.5">Commentaire</th>}
             </tr>
           </thead>
@@ -337,12 +464,15 @@ export default function Traitement() {
                 <td className="px-1.5 py-1 whitespace-nowrap text-xs">{new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
                 <td className="px-1.5 py-1 text-xs">{r.formation_libelle || '—'}</td>
                 <td className="px-1.5 py-1 text-xs">{r.domaine_libelle || '—'}</td>
-                <td className="px-1.5 py-1 text-gray-500 text-xs">
-                  {r.axe_libelle
-                    ? r.axe_description
-                      ? `${r.axe_libelle} — ${r.axe_description}`
-                      : r.axe_libelle
-                    : '—'}
+                <td className="px-1.5 py-1 text-gray-500 text-xs" title={r.axe_description || undefined}>
+                  {r.axe_libelle || '—'}
+                </td>
+                <td className="px-1.5 py-1 text-xs text-gray-500 max-w-[140px] truncate" title={(r.motivation || r.objectif) || undefined}>
+                  {(() => {
+                    const txt = r.motivation || r.objectif;
+                    if (!txt) return '—';
+                    return txt.length > 40 ? `${txt.slice(0, 40)}…` : txt;
+                  })()}
                 </td>
                 <td className="px-1.5 py-1 text-xs">{r.nb_agents}</td>
                 <td className="px-1.5 py-1 text-xs">{r.service || '—'}</td>
@@ -350,10 +480,10 @@ export default function Traitement() {
                   {badge(r.statut)}
                   {r.motif_refus && <p className="text-xs text-red-500 mt-0.5 max-w-32">{r.motif_refus}</p>}
                 </td>
-                {canValidate && (
+                {canView && (
                   <td className="px-1.5 py-1">
                     <div className="flex items-center gap-0.5">
-                      {(r.statut === 'en_attente' || isAdmin) && (
+                      {canValidate && (r.statut === 'en_attente' || isAdmin) && (
                         <>
                           <button onClick={() => validerLigne(r)}
                             className="flex items-center gap-0.5 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-green-700">
@@ -364,6 +494,12 @@ export default function Traitement() {
                             <XCircle className="w-2.5 h-2.5" /> R
                           </button>
                         </>
+                      )}
+                      {r.detailId > 0 && (
+                        <button onClick={() => openEdit(r)} title="Modifier la demande"
+                          className="flex items-center gap-0.5 bg-ivry-navy text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-ivry-navy-dark">
+                          <Pencil className="w-2.5 h-2.5" />
+                        </button>
                       )}
                       {isAdmin && (
                         <button onClick={() => supprimerDemande(r.soumissionId)} title="Supprimer la demande"
@@ -412,6 +548,132 @@ export default function Traitement() {
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => { setShowRefuseDialog(false); setRefuseMotif(''); setPendingRefuseKeys(null); }} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
               <button onClick={confirmRefuser} disabled={!refuseMotif.trim()} className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50">Confirmer le refus</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingRow && editForm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded shadow-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg">Modifier la demande</h3>
+              <button onClick={closeEdit} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => updateEditField('type', 'reglementaire')}
+                  className={`px-3 py-1.5 rounded text-xs font-semibold ${editForm.type === 'reglementaire' ? 'bg-ivry-navy/10 text-ivry-navy' : 'text-gray-500 hover:bg-gray-100'}`}>
+                  Réglementaire
+                </button>
+                <button type="button" onClick={() => updateEditField('type', 'autre')}
+                  className={`px-3 py-1.5 rounded text-xs font-semibold ${editForm.type === 'autre' ? 'bg-ivry-red/10 text-ivry-red' : 'text-gray-500 hover:bg-gray-100'}`}>
+                  Autre formation
+                </button>
+              </div>
+
+              {editForm.type === 'reglementaire' ? (
+                <>
+                  <div>
+                    <label className="form-label">Formation réglementaire</label>
+                    <select value={editForm.formation_id} onChange={(e) => updateEditField('formation_id', Number(e.target.value))} className="form-input">
+                      <option value={0}>Sélectionner...</option>
+                      {formations.map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Motivation</label>
+                    <textarea value={editForm.motivation} onChange={(e) => updateEditField('motivation', e.target.value)} className="form-input" rows={2} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="form-label">Intitulé de la formation</label>
+                    <input type="text" value={editForm.intitule} onChange={(e) => updateEditField('intitule', e.target.value)} className="form-input" />
+                  </div>
+                  <div>
+                    <label className="form-label">Objectif</label>
+                    <textarea value={editForm.objectif} onChange={(e) => updateEditField('objectif', e.target.value)} className="form-input" rows={2} />
+                  </div>
+                </>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label">Domaine d'activité</label>
+                  <select value={editForm.domaine_id} onChange={(e) => updateEditField('domaine_id', Number(e.target.value))} className="form-input">
+                    <option value={0}>Sélectionner...</option>
+                    {domainesRef.map((d) => <option key={d.id} value={d.id}>{d.libelle}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Axe</label>
+                  <select value={editForm.axe_id} onChange={(e) => updateEditField('axe_id', Number(e.target.value))} className="form-input">
+                    <option value={0}>Sélectionner...</option>
+                    {axesRef.map((a) => <option key={a.id} value={a.id}>{axeLabel(a)}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Date de mise en œuvre souhaitée</label>
+                <div className="flex gap-3">
+                  {EDIT_YEARS.map((y) => (
+                    <label key={y} className="flex items-center gap-1.5 cursor-pointer">
+                      <input type="checkbox" checked={editForm.date_souhaitee.includes(y)} onChange={() => toggleEditYear(y)} className="accent-[#EC4B52]" />
+                      {y}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {editForm.type === 'autre' && (
+                <>
+                  <div>
+                    <label className="form-label">Organisme pressenti</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="edit-orga" checked={editForm.organisme === 'CNFPT'} onChange={() => updateEditField('organisme', 'CNFPT')} className="accent-[#29345C]" />
+                        CNFPT
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="edit-orga" checked={editForm.organisme === 'autre'} onChange={() => updateEditField('organisme', 'autre')} className="accent-[#29345C]" />
+                        Autre
+                      </label>
+                    </div>
+                  </div>
+                  {editForm.organisme === 'autre' && (
+                    <>
+                      <div>
+                        <label className="form-label">Nom de l'organisme</label>
+                        <input type="text" value={editForm.organisme_nom} onChange={(e) => updateEditField('organisme_nom', e.target.value)} className="form-input" />
+                      </div>
+                      <div>
+                        <label className="form-label">Justification</label>
+                        <textarea value={editForm.justification} onChange={(e) => updateEditField('justification', e.target.value)} className="form-input" rows={2} />
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <label className="form-label">Estimation budgétaire</label>
+                    <input type="text" value={editForm.estimation_budget} onChange={(e) => updateEditField('estimation_budget', e.target.value)} className="form-input" />
+                  </div>
+                </>
+              )}
+
+              <div className="w-24">
+                <label className="form-label">Nombre d'agents</label>
+                <input type="number" min={1} value={editForm.nb_agents} onChange={(e) => updateEditField('nb_agents', Number(e.target.value))} className="form-input" />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button onClick={closeEdit} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
+              <button onClick={saveEdit} disabled={savingEdit} className="px-4 py-2 text-sm bg-ivry-navy text-white rounded hover:bg-ivry-navy-dark disabled:opacity-50">
+                {savingEdit ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
             </div>
           </div>
         </div>

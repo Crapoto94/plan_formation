@@ -274,6 +274,29 @@ async function supprimer(req, res) {
   res.json({ success: true });
 }
 
+const DETAIL_EDIT_FIELDS = [
+  'formation_id', 'domaine_id', 'axe_id', 'motivation', 'nb_agents', 'type',
+  'intitule', 'objectif', 'date_souhaitee', 'organisme', 'organisme_nom',
+  'justification', 'estimation_budget',
+];
+
+async function modifierDetail(req, res) {
+  const org = await getUserOrg(req);
+  if (!['admin', 'service_formation', 'directeur', 'responsable_service'].includes(org.role)) {
+    return res.status(403).json({ error: 'Accès non autorisé' });
+  }
+  const fields = {};
+  for (const key of DETAIL_EDIT_FIELDS) {
+    if (key in req.body) fields[key] = req.body[key];
+  }
+  if (Array.isArray(fields.date_souhaitee)) fields.date_souhaitee = JSON.stringify(fields.date_souhaitee);
+  const updated = await repo.updateDetail(req.params.id, fields);
+  if (!updated) return res.status(404).json({ error: 'Détail introuvable' });
+  const link = await repo.getSoumissionIdByDetail(req.params.id);
+  const soumission = link ? await repo.findById(link.soumission_id) : null;
+  res.json(soumission || updated);
+}
+
 async function recapitulatif(req, res) {
   const org = await getUserOrg(req);
   const allowed = org.role === 'admin' || org.role === 'service_formation' || (org.role === 'directeur' && isDGADGA(org.fonction));
@@ -284,4 +307,4 @@ async function recapitulatif(req, res) {
   res.json(rows);
 }
 
-module.exports = { listSoumissions, getSoumission, valider, refuser, updateCommentaire, supprimer, recapitulatif };
+module.exports = { listSoumissions, getSoumission, valider, refuser, updateCommentaire, supprimer, modifierDetail, recapitulatif };

@@ -13,5 +13,6 @@ router.post('/valider', controller.valider);
 router.post('/refuser', controller.refuser);
 router.patch('/soumissions/:id/commentaire', controller.updateCommentaire);
 router.delete('/soumissions/:id', controller.supprimer);
+router.patch('/details/:id', controller.modifierDetail);
 
 module.exports = router;
