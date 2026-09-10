@@ -266,6 +266,13 @@ function isDGADGA(fonction) {
   return dgKeywords.some((k) => fonction.replace(/[\s_-]+/g, '.').includes(k));
 }
 
+async function supprimer(req, res) {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Réservé aux administrateurs' });
+  const deleted = await repo.deleteSoumission(req.params.id);
+  if (!deleted) return res.status(404).json({ error: 'Soumission introuvable' });
+  res.json({ success: true });
+}
+
 async function recapitulatif(req, res) {
   const org = await getUserOrg(req);
   const allowed = org.role === 'admin' || org.role === 'service_formation' || (org.role === 'directeur' && isDGADGA(org.fonction));
@@ -276,4 +283,4 @@ async function recapitulatif(req, res) {
   res.json(rows);
 }
 
-module.exports = { listSoumissions, getSoumission, valider, refuser, updateCommentaire, recapitulatif };
+module.exports = { listSoumissions, getSoumission, valider, refuser, updateCommentaire, supprimer, recapitulatif };

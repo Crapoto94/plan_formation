@@ -113,4 +113,8 @@ function updateSoumissionStatut(id, statut) {
   );
 }
 
-module.exports = { findAll, findByStatut, findByDirection, findByService, findByAgent, findById, updateStatut, batchUpdateStatut, updateCommentaire, batchUpdateDetailStatut, getSoumissionIdByDetail, getDetailsBySoumission, updateSoumissionStatut };
+function deleteSoumission(id) {
+  return db.get(`DELETE FROM formation.soumissions WHERE id = $1 RETURNING id`, [id]);
+}
+
+module.exports = { findAll, findByStatut, findByDirection, findByService, findByAgent, findById, updateStatut, batchUpdateStatut, updateCommentaire, batchUpdateDetailStatut, getSoumissionIdByDetail, getDetailsBySoumission, updateSoumissionStatut, deleteSoumission };

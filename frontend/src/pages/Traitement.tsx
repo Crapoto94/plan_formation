@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import {
   CheckCircle, XCircle, MessageSquare, AlertTriangle, Loader,
-  ChevronUp, ChevronDown, Search
+  ChevronUp, ChevronDown, Search, Trash2
 } from 'lucide-react';
 import api from '../api/axios';
 import type { Soumission, SoumissionDetail } from '../types';
@@ -155,6 +155,15 @@ export default function Traitement() {
   function refuserLigne(row: DetailRow) {
     setPendingRefuseKeys(new Set([row.key]));
     setShowRefuseDialog(true);
+  }
+
+  async function supprimerDemande(soumissionId: number) {
+    if (!window.confirm('Supprimer définitivement cette demande (et toutes ses formations) ?')) return;
+    try {
+      await api.delete(`/api/v1/traitement/soumissions/${soumissionId}`);
+      setSoumissions((prev) => prev.filter((s) => s.id !== soumissionId));
+      setSelected((prev) => new Set([...prev].filter((k) => Number(k.split('-')[0]) !== soumissionId)));
+    } catch { alert('Erreur lors de la suppression'); }
   }
 
   const allRows = useMemo(() => {
@@ -312,7 +321,7 @@ export default function Traitement() {
               <tr key={r.key} className={`hover:bg-gray-50 ${r.statut !== 'en_attente' ? 'text-gray-400' : ''}`}>
                 {canValidate && (
                   <td className="px-1.5 py-1">
-                    {r.statut === 'en_attente' && (
+                    {(r.statut === 'en_attente' || isAdmin) && (
                       <input type="checkbox" checked={selected.has(r.key)} onChange={() => toggle(r.key)} className="accent-[#29345C]" />
                     )}
                   </td>
@@ -336,18 +345,26 @@ export default function Traitement() {
                 </td>
                 {canValidate && (
                   <td className="px-1.5 py-1">
-                    {r.statut === 'en_attente' && (
-                      <div className="flex items-center gap-0.5">
-                        <button onClick={() => validerLigne(r)}
-                          className="flex items-center gap-0.5 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-green-700">
-                          <CheckCircle className="w-2.5 h-2.5" /> V
+                    <div className="flex items-center gap-0.5">
+                      {(r.statut === 'en_attente' || isAdmin) && (
+                        <>
+                          <button onClick={() => validerLigne(r)}
+                            className="flex items-center gap-0.5 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-green-700">
+                            <CheckCircle className="w-2.5 h-2.5" /> V
+                          </button>
+                          <button onClick={() => refuserLigne(r)}
+                            className="flex items-center gap-0.5 bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-red-700">
+                            <XCircle className="w-2.5 h-2.5" /> R
+                          </button>
+                        </>
+                      )}
+                      {isAdmin && (
+                        <button onClick={() => supprimerDemande(r.soumissionId)} title="Supprimer la demande"
+                          className="flex items-center gap-0.5 bg-gray-500 text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-gray-600">
+                          <Trash2 className="w-2.5 h-2.5" />
                         </button>
-                        <button onClick={() => refuserLigne(r)}
-                          className="flex items-center gap-0.5 bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px] hover:bg-red-700">
-                          <XCircle className="w-2.5 h-2.5" /> R
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
                 )}
                 {canValidate && (

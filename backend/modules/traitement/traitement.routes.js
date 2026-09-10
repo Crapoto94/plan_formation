@@ -12,5 +12,6 @@ router.get('/recapitulatif', controller.recapitulatif);
 router.post('/valider', controller.valider);
 router.post('/refuser', controller.refuser);
 router.patch('/soumissions/:id/commentaire', controller.updateCommentaire);
+router.delete('/soumissions/:id', controller.supprimer);
 
 module.exports = router;
