@@ -254,6 +254,7 @@ async function refuser(req, res) {
 }
 
 async function updateCommentaire(req, res) {
+  if (!(await canValidate(req))) return res.status(403).json({ error: 'Réservé aux directeurs et administrateurs' });
   const { commentaire } = req.body;
   const row = await repo.updateCommentaire(req.params.id, commentaire);
   if (!row) return res.status(404).json({ error: 'Soumission introuvable' });

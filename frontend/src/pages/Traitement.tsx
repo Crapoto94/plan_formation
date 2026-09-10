@@ -166,6 +166,13 @@ export default function Traitement() {
     } catch { alert('Erreur lors de la suppression'); }
   }
 
+  async function saveCommentaire(soumissionId: number, value: string) {
+    try {
+      await api.patch(`/api/v1/traitement/soumissions/${soumissionId}/commentaire`, { commentaire: value });
+      setSoumissions((prev) => prev.map((s) => (s.id === soumissionId ? { ...s, commentaire: value } : s)));
+    } catch { alert('Erreur lors de la sauvegarde du commentaire'); }
+  }
+
   const allRows = useMemo(() => {
     return soumissions.flatMap((s) => {
       const details: SoumissionDetail[] = s.details?.length ? s.details : [];
@@ -376,7 +383,11 @@ export default function Traitement() {
                         placeholder="..."
                         value={comments[r.soumissionId] ?? r.commentaire ?? ''}
                         onChange={(e) => setComments({ ...comments, [r.soumissionId]: e.target.value })}
-                        className="w-12 border-b border-gray-200 text-[10px] py-0.5 focus:outline-none focus:border-ivry-navy bg-transparent"
+                        onBlur={(e) => {
+                          if (isAdmin && e.target.value !== (r.commentaire ?? '')) saveCommentaire(r.soumissionId, e.target.value);
+                        }}
+                        title={isAdmin ? "Annotation de validation — modifiable à tout moment" : undefined}
+                        className={`${isAdmin ? 'w-24' : 'w-12'} border-b border-gray-200 text-[10px] py-0.5 focus:outline-none focus:border-ivry-navy bg-transparent`}
                       />
                     </div>
                   </td>
